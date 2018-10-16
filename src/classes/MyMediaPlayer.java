@@ -13,7 +13,7 @@ public class MyMediaPlayer {
     //--------------------------------
     //      ATTRIBUTES
     //--------------------------------
-    private Monitor monitor;
+    private final Monitor MONITOR;
     private File localFolder;
     private ArrayList<FileInfo> fileInfo;
     private boolean changed;
@@ -22,7 +22,7 @@ public class MyMediaPlayer {
     //      CONSTRUCTORS
     //--------------------------------
     public MyMediaPlayer() {
-        this.monitor = new Monitor();
+        this.MONITOR = new Monitor();
     }
 
     //--------------------------------
@@ -33,7 +33,7 @@ public class MyMediaPlayer {
     }
 
     public Monitor getMonitor() {
-        return monitor;
+        return MONITOR;
     }
 
     public ArrayList<FileInfo> getFileInfo() {
@@ -45,10 +45,6 @@ public class MyMediaPlayer {
     //--------------------------------
     public void setLocalFolder(File localFolder) {
         this.localFolder = localFolder;
-    }
-
-    public void setMonitor(Monitor monitor) {
-        this.monitor = monitor;
     }
 
     public void setFileInfo(ArrayList<FileInfo> fileInfo) {
@@ -91,9 +87,9 @@ public class MyMediaPlayer {
     }
 
     public void uploadFile(FileInfo file){
-        if(file != null && !monitor.fileExists(file)) {
+        if(file != null && !MONITOR.fileExists(file)) {
             String source = file.getLocation();
-            String destination = this.monitor.getFolderPath();
+            String destination = this.MONITOR.getFolderPath();
             this.copyFile(file, source, destination);
         }
         else
@@ -102,7 +98,7 @@ public class MyMediaPlayer {
 
     public void downLoadFile(FileInfo file){
         if(file != null && !this.fileExists(file)) {
-            String source = this.monitor.getFolderPath();
+            String source = this.MONITOR.getFolderPath();
             String destination = file.getLocation();
             this.copyFile(file, source, destination);
             this.addFile(file);
