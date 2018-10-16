@@ -1,0 +1,7 @@
+#refreshBtn{
+    -fx-background-image: url("../images/refreshButton.png");
+    -fx-background-size: 25 25;
+    -fx-background-position: center center;
+    -fx-pref-width: 25;
+    -fx-pref-height: 25;
+}
