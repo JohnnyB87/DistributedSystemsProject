@@ -14,6 +14,7 @@ public class Monitor implements Viewer, Runnable {
     private final String FOLDERPATH = System.getProperty("user.home") + File.separator + "Desktop" + File.separator + "Shared Folder";
     private File folder;
     private ArrayList<FileInfo> names;
+    private boolean isChanged;
 
     //---------------------------
     //      CONSTRUCTORS
@@ -75,8 +76,11 @@ public class Monitor implements Viewer, Runnable {
 
     @Override
     public boolean checkForChange() {
-        String[] newFiles = this.folder.list();
-        return newFiles != null && newFiles.length != this.names.size();
+        if(isChanged) {
+            isChanged = false;
+            return true;
+        }
+        return false;
     }
 
     //---------------------------
@@ -115,37 +119,28 @@ public class Monitor implements Viewer, Runnable {
         FileSystem fs = FileSystems.getDefault();
         try {
             WatchService service = fs.newWatchService();
-
             path.register(service, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE);
-
-            // Start the infinite polling loop
-            WatchKey key = null;
-            // loop
+            WatchKey key;
             do {
                 key = service.take();
-
-                // Dequeueing events
-
+                isChanged = true;
                 for (WatchEvent event : key.pollEvents()) {
-                    // Get the type of the event
                     WatchEvent.Kind kind = event.kind();
+                    String fileName = event.context().toString();
                     if (StandardWatchEventKinds.ENTRY_CREATE.equals(kind)) {
-                        String fileName = event.context().toString();
+                        System.out.println(isChanged);
                         System.out.println("File Created:" + fileName);
                     } else if (StandardWatchEventKinds.ENTRY_MODIFY.equals(kind)) {
-                        // modified
-                        Path newPath = ((WatchEvent<Path>) event)
-                                .context();
-                        // Output
-                        System.out.println("New path modified: " + newPath);
+
+                        System.out.println("New path modified: " + fileName);
                     }else if (StandardWatchEventKinds.ENTRY_DELETE.equals(kind)) {
-                        // modified
-                        Path newPath = ((WatchEvent<Path>) event)
-                                .context();
-                        // Output
-                        System.out.println("Path deleted: " + newPath);
+
+                        System.out.println("Path deleted: " + fileName);
                     }
+                    System.out.println(isChanged);
                 }
+                isChanged = false;
+                System.out.println(isChanged);
 
             } while (key.reset());
 
