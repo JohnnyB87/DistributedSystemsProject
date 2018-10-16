@@ -11,7 +11,6 @@ import javafx.stage.DirectoryChooser;
 import java.io.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
 import javazoom.jl.decoder.JavaLayerException;
 
 public class MyMediaPlayerController {
@@ -116,7 +115,6 @@ public class MyMediaPlayerController {
         this.sharedFolder.populateArray();
         serverTable.getItems().addAll(this.sharedFolder.getNames());
     }
-
 
 //    public void checkIfFileExists() {
 //        this.playButton.setDisable(true);
