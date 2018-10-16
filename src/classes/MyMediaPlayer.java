@@ -1,7 +1,5 @@
 package classes;
 
-import interfaces.Viewer;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -22,7 +20,7 @@ public class MyMediaPlayer {
     //      CONSTRUCTORS
     //--------------------------------
     public MyMediaPlayer() {
-        this.MONITOR = new Monitor();
+        this.MONITOR = Main.getMonitor();
     }
 
     //--------------------------------

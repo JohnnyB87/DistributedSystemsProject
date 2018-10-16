@@ -3,12 +3,15 @@ package classes;
 import interfaces.Viewer;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.*;
 import java.util.ArrayList;
 
-public class Monitor implements Viewer {
+import static java.nio.file.StandardWatchEventKinds.*;
 
-    private String folderName;
-    private String folderPath;
+public class Monitor implements Viewer, Runnable {
+
+    private final String FOLDERPATH = System.getProperty("user.home") + File.separator + "Desktop" + File.separator + "Shared Folder";
     private File folder;
     private ArrayList<FileInfo> names;
 
@@ -16,10 +19,7 @@ public class Monitor implements Viewer {
     //      CONSTRUCTORS
     //---------------------------
     public Monitor() {
-        this.folderName = "Shared Folder";
-        String userHome = System.getProperty("user.home") + File.separator + "Desktop";
-        this.folderPath = userHome + File.separator + this.folderName;
-        this.folder = new File(this.folderPath);
+        this.folder = new File(this.FOLDERPATH);
         this.names = new ArrayList<>();
         if (!this.folder.exists()) {
             this.folder.mkdir();
@@ -33,31 +33,12 @@ public class Monitor implements Viewer {
     //---------------------------
     //      GETTERS
     //---------------------------
-    public String getFolderName() {
-        return folderName;
-    }
-
     public String getFolderPath() {
-        return folderPath;
+        return FOLDERPATH;
     }
 
     public File getFolder() {
         return folder;
-    }
-
-    //---------------------------
-    //      SETTERS
-    //---------------------------
-    public void setFolderName(String folderName) {
-        this.folderName = folderName;
-    }
-
-    public void setFolderPath(String folderPath) {
-        this.folderPath = folderPath;
-    }
-
-    public void setFolder(File folder) {
-        this.folder = folder;
     }
 
     //---------------------------
@@ -106,12 +87,12 @@ public class Monitor implements Viewer {
         this.names.clear();
 
         for(String s : array){
-            File file = new File(this.folderPath + File.separator + s);
+            File file = new File(this.FOLDERPATH + File.separator + s);
 
             String fileName = s.substring(0, s.lastIndexOf("."));
             String fileType = s.substring(s.lastIndexOf(".") + 1);
 
-            FileInfo fileInfo = new FileInfo(this.folderPath, fileName, fileType, file.length()/1024.0);
+            FileInfo fileInfo = new FileInfo(this.FOLDERPATH, fileName, fileType, file.length()/1024.0);
             names.add(fileInfo);
         }
     }
@@ -126,5 +107,50 @@ public class Monitor implements Viewer {
                 return true;
         }
         return false;
+    }
+
+    @Override
+    public void run() {
+        Path path = Paths.get(this.FOLDERPATH);
+        FileSystem fs = FileSystems.getDefault();
+        try {
+            WatchService service = fs.newWatchService();
+
+            path.register(service, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE);
+
+            // Start the infinite polling loop
+            WatchKey key = null;
+            // loop
+            do {
+                key = service.take();
+
+                // Dequeueing events
+
+                for (WatchEvent event : key.pollEvents()) {
+                    // Get the type of the event
+                    WatchEvent.Kind kind = event.kind();
+                    if (StandardWatchEventKinds.ENTRY_CREATE.equals(kind)) {
+                        String fileName = event.context().toString();
+                        System.out.println("File Created:" + fileName);
+                    } else if (StandardWatchEventKinds.ENTRY_MODIFY.equals(kind)) {
+                        // modified
+                        Path newPath = ((WatchEvent<Path>) event)
+                                .context();
+                        // Output
+                        System.out.println("New path modified: " + newPath);
+                    }else if (StandardWatchEventKinds.ENTRY_DELETE.equals(kind)) {
+                        // modified
+                        Path newPath = ((WatchEvent<Path>) event)
+                                .context();
+                        // Output
+                        System.out.println("Path deleted: " + newPath);
+                    }
+                }
+
+            } while (key.reset());
+
+        } catch (IOException | InterruptedException ioe) {
+            ioe.printStackTrace();
+        }
     }
 }

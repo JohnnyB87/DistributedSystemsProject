@@ -1,9 +1,6 @@
 package controllers;
 
-import classes.FileInfo;
-import classes.MediaPlayerTableView;
-import classes.Monitor;
-import classes.MyMediaPlayer;
+import classes.*;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -12,6 +9,9 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.TouchEvent;
 import javafx.stage.DirectoryChooser;
 import java.io.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 import javazoom.jl.decoder.JavaLayerException;
 
 public class MyMediaPlayerController {
@@ -29,22 +29,24 @@ public class MyMediaPlayerController {
     private Monitor sharedFolder;
     private MyMediaPlayer localFolder;
 
-    private static int test;
-
-    public MyMediaPlayerController() {
-        test++;
-    }
-
     @FXML
     private void initialize(){
+
         this.localFolder = new MyMediaPlayer();
         this.sharedFolder = this.localFolder.getMonitor();
         serverTable.getItems().addAll(this.sharedFolder.getNames());
 
+        ExecutorService application = Executors.newCachedThreadPool();
+
+        application.execute( this.sharedFolder );
+
+        application.shutdown();
+
+
     }
 
     public void connectButtonPressed(ActionEvent actionEvent) {
-        System.out.println(test);
+
         System.out.println("Hello");
     }
 
