@@ -108,7 +108,7 @@ public class MyMediaPlayerController {
 
     public void refreshButtonPressed(ActionEvent actionEvent) {
         serverTable.getItems().clear();
-        this.sharedFolder.populateArray();
+//        this.sharedFolder.populateArray();
         serverTable.getItems().addAll(this.sharedFolder.getNames());
     }
 

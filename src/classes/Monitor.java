@@ -133,15 +133,7 @@ public class Monitor implements Viewer, Runnable {
                     WatchEvent.Kind kind = event.kind();
                     String fileName = event.context().toString();
 
-//                    System.out.printf("%nkind=%s, count=%d, context=%s Context type=%s%n%n ",
-//                            kind,
-//                            event.count(), event.context(),
-//                            ((Path) event.context()).getClass());
-
-                    FileInfo file = new FileInfo();
-                    file.setName(fileName.substring(0, fileName.lastIndexOf(".")));
-                    file.setType(fileName.substring(fileName.lastIndexOf(".") + 1));
-                    file.setLocation(this.FOLDERPATH);
+                    FileInfo file = createFileInfo(fileName);
 
                     if (StandardWatchEventKinds.ENTRY_CREATE.equals(kind)) {
                         isChanged = true;
@@ -161,8 +153,19 @@ public class Monitor implements Viewer, Runnable {
             } while (key.reset());
 
         } catch (IOException | InterruptedException ioe) {
-            ioe.printStackTrace();
+            System.out.println("Error: --> Class: Monitor --> Method: watchDirectory()");
         }
+    }
+
+    private FileInfo createFileInfo(String fileName){
+        File f = new File(this.FOLDERPATH + File.separator + fileName);
+        FileInfo file = new FileInfo();
+        file.setName(fileName.substring(0, fileName.lastIndexOf(".")));
+        file.setType(fileName.substring(fileName.lastIndexOf(".") + 1));
+        file.setLocation(this.FOLDERPATH);
+        file.setSize(f.length()/1024.0);
+
+        return file;
     }
 
 }
