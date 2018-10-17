@@ -29,6 +29,8 @@ public class MonitorDirectory {
         do {
             WatchKey watchKey = watchService.take();
 
+
+            System.out.println(watchKey.pollEvents());
             for (WatchEvent event : watchKey.pollEvents()) {
                 WatchEvent.Kind kind = event.kind();
                 String fileName = event.context().toString();

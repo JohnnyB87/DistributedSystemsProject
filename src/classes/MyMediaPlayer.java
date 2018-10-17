@@ -97,7 +97,7 @@ public class MyMediaPlayer {
     public void downLoadFile(FileInfo file){
         if(file != null && !this.fileExists(file)) {
             String source = this.MONITOR.getFolderPath();
-            String destination = file.getLocation();
+            String destination = this.localFolder.getAbsolutePath();
             this.copyFile(file, source, destination);
             this.addFile(file);
         }

@@ -83,6 +83,11 @@ public class Monitor implements Viewer, Runnable {
         return false;
     }
 
+    @Override
+    public void run() {
+        watchDirectory();
+    }
+
     //---------------------------
     //      EXTRA FUNCTIONALITY
     //---------------------------
@@ -113,34 +118,45 @@ public class Monitor implements Viewer, Runnable {
         return false;
     }
 
-    @Override
-    public void run() {
+    public void watchDirectory(){
         Path path = Paths.get(this.FOLDERPATH);
         FileSystem fs = FileSystems.getDefault();
         try {
             WatchService service = fs.newWatchService();
-            path.register(service, ENTRY_CREATE, ENTRY_MODIFY, ENTRY_DELETE);
+            path.register(service, ENTRY_CREATE, ENTRY_DELETE);
             WatchKey key;
             do {
                 key = service.take();
-                isChanged = true;
+
+//                System.out.println(key.pollEvents());
                 for (WatchEvent event : key.pollEvents()) {
                     WatchEvent.Kind kind = event.kind();
                     String fileName = event.context().toString();
+
+//                    System.out.printf("%nkind=%s, count=%d, context=%s Context type=%s%n%n ",
+//                            kind,
+//                            event.count(), event.context(),
+//                            ((Path) event.context()).getClass());
+
+                    FileInfo file = new FileInfo();
+                    file.setName(fileName.substring(0, fileName.lastIndexOf(".")));
+                    file.setType(fileName.substring(fileName.lastIndexOf(".") + 1));
+                    file.setLocation(this.FOLDERPATH);
+
                     if (StandardWatchEventKinds.ENTRY_CREATE.equals(kind)) {
-                        System.out.println(isChanged);
+                        isChanged = true;
                         System.out.println("File Created:" + fileName);
-                    } else if (StandardWatchEventKinds.ENTRY_MODIFY.equals(kind)) {
-
-                        System.out.println("New path modified: " + fileName);
+                        this.addFile(file);
+//                    } else if (StandardWatchEventKinds.ENTRY_MODIFY.equals(kind)) {
+//                        isChanged = true;
+//                        System.out.println("New path modified: " + fileName);
                     }else if (StandardWatchEventKinds.ENTRY_DELETE.equals(kind)) {
-
+                        isChanged = true;
                         System.out.println("Path deleted: " + fileName);
                     }
+
                     System.out.println(isChanged);
                 }
-                isChanged = false;
-                System.out.println(isChanged);
 
             } while (key.reset());
 
@@ -148,4 +164,5 @@ public class Monitor implements Viewer, Runnable {
             ioe.printStackTrace();
         }
     }
+
 }
