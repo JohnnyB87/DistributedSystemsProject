@@ -34,13 +34,9 @@ public class MyMediaPlayerController {
         this.localFolder = new MyMediaPlayer();
         this.sharedFolder = this.localFolder.getMonitor();
         serverTable.getItems().addAll(this.sharedFolder.getNames());
-
         ExecutorService application = Executors.newCachedThreadPool();
-
         application.execute( this.sharedFolder );
-
         application.shutdown();
-
 
     }
 
@@ -98,7 +94,7 @@ public class MyMediaPlayerController {
         this.localFolder.uploadFile(file);
         if(this.sharedFolder.checkForChange()) {
             serverTable.getItems().add(file);
-            this.sharedFolder.addFile(file);
+//            this.sharedFolder.addFile(file);
         }
     }
 
@@ -112,7 +108,7 @@ public class MyMediaPlayerController {
 
     public void refreshButtonPressed(ActionEvent actionEvent) {
         serverTable.getItems().clear();
-        this.sharedFolder.populateArray();
+//        this.sharedFolder.populateArray();
         serverTable.getItems().addAll(this.sharedFolder.getNames());
     }
 

@@ -10,6 +10,8 @@ public class FileInfo implements Comparable<FileInfo>{
     //---------------------------
     //      CONSTRUCTORS
     //---------------------------
+    public FileInfo(){}
+
     public FileInfo(String location, String name, String type, double size){
         this.location = location;
         this.name = name;
