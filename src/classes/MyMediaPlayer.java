@@ -6,7 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 
-public class MyMediaPlayer {
+public class MyMediaPlayer implements Runnable{
 
     //--------------------------------
     //      ATTRIBUTES
@@ -50,6 +50,14 @@ public class MyMediaPlayer {
     }
 
     //--------------------------------
+    //      IMPLEMENTED METHODS
+    //--------------------------------
+    @Override
+    public void run() {
+
+    }
+
+    //--------------------------------
     //      EXTRA FUNCTIONALITY
     //--------------------------------
     public void folderItemsToArrayList(){
@@ -80,7 +88,7 @@ public class MyMediaPlayer {
             System.out.println("Successful Copy\nSource: " + source);
             System.out.println("Destination: " + destination);
         }catch(IOException ioe){
-            System.out.println("IOException: Class --> MyMediaPlayer --> copyFile(File, String)");
+            System.out.println("IOException: Class --> MyMediaPlayer --> copyFile()");
         }
     }
 
@@ -116,6 +124,7 @@ public class MyMediaPlayer {
         }
         return false;
     }
+
 
 
 }
