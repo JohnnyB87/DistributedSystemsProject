@@ -9,6 +9,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.TouchEvent;
 import javafx.stage.DirectoryChooser;
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javazoom.jl.decoder.JavaLayerException;
@@ -34,22 +35,25 @@ public class MyMediaPlayerController {
         this.localFolder = new MyMediaPlayer();
         this.sharedFolder = this.localFolder.getMonitor();
         serverTable.getItems().addAll(this.sharedFolder.getNames());
+
+        checkIfFileExists();
+
         ExecutorService application = Executors.newCachedThreadPool();
         application.execute( this.sharedFolder );
         application.shutdown();
 
     }
 
-    public void connectButtonPressed(ActionEvent actionEvent) {
+    public void connectButtonPressed() {
 
         System.out.println("Hello");
     }
 
-    public void quitButtonPressed(ActionEvent actionEvent) {
+    public void quitButtonPressed() {
         Platform.exit();
     }
 
-    public void selectButtonPressed(ActionEvent actionEvent) {
+    public void selectButtonPressed() {
 //        FileChooser fileChooser = new FileChooser();
 //        fileChooser.showOpenDialog(this.selectButton.getScene().getWindow());
         try {
@@ -66,7 +70,7 @@ public class MyMediaPlayerController {
 
     }
 
-    public void playButtonPressed(ActionEvent actionEvent) {
+    public void playButtonPressed() {
 
 //        new Thread() {
 //            try {
@@ -88,37 +92,55 @@ public class MyMediaPlayerController {
 //        }.start();
     }
 
-    public void uploadButtonPressed(ActionEvent actionEvent) {
-        System.out.println("Index: " + this.clientTable.getSelectionModel().getFocusedIndex());
-        FileInfo file = this.clientTable.getSelectionModel().getSelectedItems().get(0);
-        this.localFolder.uploadFile(file);
+    public void uploadButtonPressed() {
+        if(this.localFolder.getLocalFolder() != null){
+            int selected = this.serverTable.getSelectionModel().getSelectedIndex();
+            System.out.println("Index: " + selected);
+            if (selected > -1) {
+                System.out.println("Index: " + this.clientTable.getSelectionModel().getFocusedIndex());
+                FileInfo file = this.clientTable.getSelectionModel().getSelectedItems().get(0);
+                this.localFolder.uploadFile(file);
+                if(this.sharedFolder.checkForChange())
+                    serverTable.getItems().add(file);
+            } else
+                System.out.println("Select item to upload");
+        }else
+            System.out.println("Select folder first");
+    }
+
+    public void downloadButtonPressed() {
+        if(this.localFolder.getLocalFolder() != null){
+            int selected = this.serverTable.getSelectionModel().getSelectedIndex();
+            System.out.println("Index: " + selected);
+            if (selected > -1) {
+                FileInfo file = this.serverTable.getSelectionModel().getSelectedItems().get(0);
+                this.localFolder.downLoadFile(file);
+                if (this.localFolder.checkForChange())
+                    clientTable.getItems().add(file);
+            } else
+                System.out.println("Select item to download");
+        }else
+            System.out.println("Select folder first");
+    }
+
+    public void refreshButtonPressed() {
         if(this.sharedFolder.checkForChange()) {
-            serverTable.getItems().add(file);
-//            this.sharedFolder.addFile(file);
+            serverTable.getItems().clear();
+            serverTable.getItems().addAll(this.sharedFolder.getNames());
         }
     }
 
-    public void downloadButtonPressed(ActionEvent actionEvent) {
-        System.out.println("Index: " + this.serverTable.getSelectionModel().getFocusedIndex());
-        FileInfo file = this.serverTable.getSelectionModel().getSelectedItems().get(0);
-        this.localFolder.downLoadFile(file);
-//        if(this.localFolder.checkForChange())
-//            clientTable.getItems().add(file);
-    }
+    public void checkIfFileExists() {
 
-    public void refreshButtonPressed(ActionEvent actionEvent) {
-        serverTable.getItems().clear();
-//        this.sharedFolder.populateArray();
-        serverTable.getItems().addAll(this.sharedFolder.getNames());
+        this.serverTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            if(this.localFolder.getLocalFolder() != null) {
+                if (this.localFolder.fileExists(newSelection))
+                    this.playButton.setDisable(true);
+                else
+                    this.playButton.setDisable(false);
+            }
+            else
+                System.out.println("Select folder first");
+        });
     }
-
-//    public void checkIfFileExists() {
-//        this.playButton.setDisable(true);
-//        this.serverTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
-//            if (this.localFolder.fileExists(newSelection)) {
-//                this.playButton.setDisable(false);
-//            }
-//            System.out.println(newSelection.toString());
-//        });
-//    }
 }

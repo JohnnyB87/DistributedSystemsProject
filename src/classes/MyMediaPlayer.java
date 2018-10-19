@@ -14,7 +14,7 @@ public class MyMediaPlayer implements Runnable{
     private final Monitor MONITOR;
     private File localFolder;
     private ArrayList<FileInfo> fileInfo;
-    private boolean changed;
+    private boolean isChanged;
 
     //--------------------------------
     //      CONSTRUCTORS
@@ -27,7 +27,7 @@ public class MyMediaPlayer implements Runnable{
     //      GETTERS
     //--------------------------------
     public File getLocalFolder() {
-        return localFolder;
+        return this.localFolder;
     }
 
     public Monitor getMonitor() {
@@ -77,7 +77,7 @@ public class MyMediaPlayer implements Runnable{
         }
     }
 
-    public void copyFile(FileInfo file, String source, String destination){
+    private void copyFile(FileInfo file, String source, String destination){
         try {
             String fileName = file.getName() + "." + file.getType();
             source = String.format("%s%s", source, File.separator + fileName);
@@ -108,9 +108,18 @@ public class MyMediaPlayer implements Runnable{
             String destination = this.localFolder.getAbsolutePath();
             this.copyFile(file, source, destination);
             this.addFile(file);
+            this.isChanged = true;
         }
         else
             System.out.println("File already exists in this Folder.");
+    }
+
+    public boolean checkForChange() {
+        if(isChanged) {
+            isChanged = false;
+            return true;
+        }
+        return false;
     }
 
     private void addFile(FileInfo file) {
@@ -124,7 +133,5 @@ public class MyMediaPlayer implements Runnable{
         }
         return false;
     }
-
-
 
 }
