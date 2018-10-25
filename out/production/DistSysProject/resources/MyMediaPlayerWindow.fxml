@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import classes.MediaPlayerTableView?>
+<?import javafx.geometry.Insets?>
+<?import java.net.URL?>
+
+<AnchorPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="controllers.MyMediaPlayerController"
+            prefHeight="350.0" prefWidth="650.0">
+    <stylesheets>
+        <URL value="@../css/style.css" />
+    </stylesheets>
+    <HBox spacing="20" prefHeight="50.0" prefWidth="650.0" alignment="CENTER_LEFT">
+        <padding>
+            <Insets left="25.0"/>
+        </padding>
+        <Label text="Server Address" style="-fx-font-size: 12;"/>
+        <TextField fx:id="serverIpTxtBox" promptText="xxx.xxx.xxx.xxx"/>
+        <Button fx:id="connectButton" text="Connect" onAction="#connectButtonPressed"/>
+    </HBox>
+
+    <VBox layoutX="25" layoutY="50.0" alignment="CENTER">
+        <Label text="Client" layoutX="100" layoutY="50" style="-fx-font-size: 20"/>
+        <MediaPlayerTableView fx:id="clientTable"/>
+
+    </VBox>
+
+
+    <VBox layoutX="400" layoutY="50.0" alignment="CENTER">
+        <Label text="Server" layoutX="500" layoutY="50" style="-fx-font-size: 20"/>
+        <MediaPlayerTableView fx:id="serverTable"/>
+    </VBox>
+    <Button fx:id="refreshButton" id="refreshBtn"  layoutX="600" layoutY="50" onAction="#refreshButtonPressed"/>
+    <VBox spacing="30" prefWidth="100" prefHeight="200" layoutX="275" layoutY="65" alignment="CENTER">
+        <padding>
+            <Insets top="40"/>
+        </padding>
+        <Button fx:id="uploadButton" text="Upload" prefWidth="75" onAction="#uploadButtonPressed"/>
+        <Button fx:id="downloadButton" text="Download" prefWidth="75" onAction="#downloadButtonPressed"/>
+    </VBox>
+    <HBox spacing="25" prefWidth="650" prefHeight="50" layoutY="275" alignment="CENTER" >
+        <Button fx:id="selectButton" text="Select Folder" prefWidth="100" onAction="#selectButtonPressed"/>
+        <Button fx:id="playButton" text="Play" prefWidth="100" onAction="#playButtonPressed"/>
+        <Button fx:id="quitButton" text="Quit" prefWidth="100" onAction="#quitButtonPressed"/>
+    </HBox>
+</AnchorPane>
