@@ -2,8 +2,6 @@ package controllers;
 
 import classes.*;
 import javafx.application.Platform;
-import javafx.beans.binding.Bindings;
-import javafx.beans.property.DoubleProperty;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
@@ -13,18 +11,12 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.StackPane;
-import javafx.scene.media.MediaView;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
-import javafx.scene.media.Media;
-import javafx.scene.media.MediaPlayer;
+import javafx.stage.StageStyle;
 
-import javazoom.jl.decoder.JavaLayerException;
-import javazoom.jl.player.Player;
-
-import javax.swing.*;
 import java.io.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -98,55 +90,21 @@ public class MyMediaPlayerController {
                         : clientTable.getSelectionModel().getSelectedItem();
 
                 String name = s != null ? s.getName() : "NULL";
-                File file = new File(sharedFolder.getFolderPath() + File.separator + name + "." + s.getType());
-
-                Media hit = new Media(file.toURI().toString());
-                MediaPlayer mediaPlayer = new MediaPlayer(hit);
-                mediaPlayer.play();
-
-                MediaView viewer = new MediaView(mediaPlayer);
-
-                //change width and height to fit video
-
+//                String type = s != null ? s.getType() : "NULL";
+//                File file = new File(sharedFolder.getFolderPath() + File.separator + name + "." + type);
 
                 FXMLLoader loader = new FXMLLoader(getClass().getResource("../resources/MediaPlayerPopupWindow.fxml"));
+
+                MediaPlayerPopupController myController = new MediaPlayerPopupController(s);
+                loader.setController(myController);
                 this.anchorPane = loader.load();
-                this.anchorPane.getChildren().add(viewer);
-
-                createNewStage("TEST");
-
-                DoubleProperty width = viewer.fitWidthProperty();
-                DoubleProperty height = viewer.fitHeightProperty();
-                width.bind(Bindings.selectDouble(viewer.sceneProperty(), "width"));
-                height.bind(Bindings.selectDouble(viewer.sceneProperty(), "height"));
-                viewer.setPreserveRatio(true);
-                MediaPlayerPopupController myController = loader.getController();
                 myController.setLabelPopupText(name);
 
+                createNewStage();
             } catch (IOException | NullPointerException e) {
                 e.printStackTrace();
             }
         }
-
-
-//        new Thread() {
-//            try {
-//
-//                FileInfo s = serverTable.getSelectionModel().getSelectedItem();
-//                File file = new File (sharedFolder.getFolderPath() + File.separator + s.getName()+"."+s.getType());
-//                FileInputStream fis = new FileInputStream(file);
-//                BufferedInputStream bis = new BufferedInputStream(fis);
-//                try{
-//
-//                        Player player = new Player(bis);
-//                        player.play();
-//
-//                }catch(JavaLayerException ex){System.out.println("Player problem");}
-//
-//
-//
-//            } catch (IOException e){System.out.println("File io problem: " + e);}
-//        }.start();
     }
 
     public void uploadButtonPressed() {
@@ -237,10 +195,11 @@ public class MyMediaPlayerController {
         });
     }
 
-    private void createNewStage(String title){
+    private void createNewStage(){
+        String title = "Media Player";
+
         StackPane sp = new StackPane();
         sp.getChildren().add(this.anchorPane);
-        sp.setAlignment(this.anchorPane, Pos.CENTER);
 
         Scene scene = new Scene(sp);
         Stage stage = new Stage();
