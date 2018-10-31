@@ -6,10 +6,15 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 
 public class MediaPlayerPopupController {
+
     @FXML private Label labelPopup;
     @FXML private Button pauseButton;
     @FXML private Button playButton;
     @FXML private Button quitButton;
+
+    public void setLabelPopupText(String text) {
+        this.labelPopup.setText("Now Playing " + text);
+    }
 
     public void pauseButtonPressed(ActionEvent actionEvent) {
 

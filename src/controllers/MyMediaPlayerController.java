@@ -9,12 +9,10 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.stage.Window;
 
 import java.io.*;
 import java.util.concurrent.ExecutorService;
@@ -36,6 +34,8 @@ public class MyMediaPlayerController {
     private Monitor sharedFolder;
     private MyMediaPlayer localFolder;
     private Alert alert;
+    private boolean clientIsSelected = false;
+    private boolean serverIsSelected = false;
 
     @FXML
     private void initialize(){
@@ -44,8 +44,8 @@ public class MyMediaPlayerController {
         this.sharedFolder = this.localFolder.getMonitor();
         serverTable.getItems().addAll(this.sharedFolder.getNames());
 
-        checkIfFileExistsLocally();
-        enableButtons();
+        clientTableSelected();
+        serverTableSelected();
 
         ExecutorService application = Executors.newCachedThreadPool();
         application.execute( this.sharedFolder );
@@ -80,14 +80,23 @@ public class MyMediaPlayerController {
     }
 
     public void playButtonPressed() {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("../resources/MediaPlayerPopupWindow.fxml"));
-            this.anchorPane = loader.load();
-            MediaPlayerPopupController myController = loader.getController();
+        if(serverIsSelected || clientIsSelected) {
+            try {
 
-            createNewStage("TEST", 400,400);
-        } catch (IOException e) {
-            e.printStackTrace();
+                FileInfo s = serverIsSelected ? serverTable.getSelectionModel().getSelectedItem()
+                        : clientTable.getSelectionModel().getSelectedItem();
+
+                String name = s != null ? s.getName() : "NULL";
+                File file = new File(sharedFolder.getFolderPath() + File.separator + name + "." + s.getType());
+
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("../resources/MediaPlayerPopupWindow.fxml"));
+                this.anchorPane = loader.load();
+                MediaPlayerPopupController myController = loader.getController();
+                myController.setLabelPopupText(name);
+                createNewStage("TEST");
+            } catch (IOException | NullPointerException e) {
+                e.printStackTrace();
+            }
         }
 
 
@@ -161,8 +170,10 @@ public class MyMediaPlayerController {
         }
     }
 
-    public void checkIfFileExistsLocally() {
+    public void serverTableSelected() {
         this.serverTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            this.clientIsSelected = false;
+            this.serverIsSelected = true;
             this.uploadButton.setDisable(true);
             if(this.localFolder.getLocalFolder() != null) {
                 if (this.localFolder.fileExists(newSelection)) {
@@ -182,8 +193,10 @@ public class MyMediaPlayerController {
         });
     }
 
-    public void enableButtons() {
+    public void clientTableSelected() {
         this.clientTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            this.clientIsSelected = true;
+            this.serverIsSelected = false;
             this.playButton.setDisable(false);
             this.downloadButton.setDisable(true);
             if(this.sharedFolder.getFolder() != null) {
@@ -195,11 +208,11 @@ public class MyMediaPlayerController {
         });
     }
 
-    private void createNewStage(String title, int width, int height){
+    private void createNewStage(String title){
         StackPane sp = new StackPane();
         sp.getChildren().add(this.anchorPane);
 
-        Scene scene = new Scene(sp,width,height);
+        Scene scene = new Scene(sp);
         Stage stage = new Stage();
 
         stage.initModality(Modality.WINDOW_MODAL);
@@ -209,4 +222,5 @@ public class MyMediaPlayerController {
         stage.initOwner(this.playButton.getScene().getWindow());
         stage.showAndWait();
     }
+
 }
