@@ -6,7 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 
-public class MyMediaPlayer {
+public class MyMediaPlayer implements Runnable{
 
     //--------------------------------
     //      ATTRIBUTES
@@ -14,7 +14,7 @@ public class MyMediaPlayer {
     private final Monitor MONITOR;
     private File localFolder;
     private ArrayList<FileInfo> fileInfo;
-    private boolean changed;
+    private boolean isChanged;
 
     //--------------------------------
     //      CONSTRUCTORS
@@ -27,7 +27,7 @@ public class MyMediaPlayer {
     //      GETTERS
     //--------------------------------
     public File getLocalFolder() {
-        return localFolder;
+        return this.localFolder;
     }
 
     public Monitor getMonitor() {
@@ -50,6 +50,14 @@ public class MyMediaPlayer {
     }
 
     //--------------------------------
+    //      IMPLEMENTED METHODS
+    //--------------------------------
+    @Override
+    public void run() {
+
+    }
+
+    //--------------------------------
     //      EXTRA FUNCTIONALITY
     //--------------------------------
     public void folderItemsToArrayList(){
@@ -69,7 +77,7 @@ public class MyMediaPlayer {
         }
     }
 
-    public void copyFile(FileInfo file, String source, String destination){
+    private void copyFile(FileInfo file, String source, String destination){
         try {
             String fileName = file.getName() + "." + file.getType();
             source = String.format("%s%s", source, File.separator + fileName);
@@ -80,7 +88,7 @@ public class MyMediaPlayer {
             System.out.println("Successful Copy\nSource: " + source);
             System.out.println("Destination: " + destination);
         }catch(IOException ioe){
-            System.out.println("IOException: Class --> MyMediaPlayer --> copyFile(File, String)");
+            System.out.println("IOException: Class --> MyMediaPlayer --> copyFile()");
         }
     }
 
@@ -100,9 +108,18 @@ public class MyMediaPlayer {
             String destination = this.localFolder.getAbsolutePath();
             this.copyFile(file, source, destination);
             this.addFile(file);
+            this.isChanged = true;
         }
         else
             System.out.println("File already exists in this Folder.");
+    }
+
+    public boolean checkForChange() {
+        if(isChanged) {
+            isChanged = false;
+            return true;
+        }
+        return false;
     }
 
     private void addFile(FileInfo file) {
@@ -116,6 +133,5 @@ public class MyMediaPlayer {
         }
         return false;
     }
-
 
 }
