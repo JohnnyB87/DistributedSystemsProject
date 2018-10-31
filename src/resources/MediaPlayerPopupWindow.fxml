@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<AnchorPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="controllers.MediaPlayerPopupController"
+            prefHeight="400.0" prefWidth="600.0">
+    <Label fx:id="labelPopup" style="-fx-font-size: 12;"/>
+    <HBox spacing="25" prefWidth="650" prefHeight="50" layoutY="275" alignment="CENTER" >
+        <Button fx:id="pauseButton" text="Select Folder" prefWidth="100" onAction="#pauseButtonPressed"/>
+        <Button fx:id="playButton" text="Play" prefWidth="100" onAction="#playButtonPressed"/>
+        <Button fx:id="quitButton" text="Quit" prefWidth="100" onAction="#quitButtonPressed"/>
+    </HBox>
+</AnchorPane>

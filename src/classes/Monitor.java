@@ -94,15 +94,16 @@ public class Monitor implements Viewer, Runnable {
     public void populateArray() {
         String[] array = this.folder.list();
         this.names.clear();
+        if(array != null) {
+            for (String s : array) {
+                File file = new File(this.FOLDERPATH + File.separator + s);
 
-        for(String s : array){
-            File file = new File(this.FOLDERPATH + File.separator + s);
+                String fileName = s.substring(0, s.lastIndexOf("."));
+                String fileType = s.substring(s.lastIndexOf(".") + 1);
 
-            String fileName = s.substring(0, s.lastIndexOf("."));
-            String fileType = s.substring(s.lastIndexOf(".") + 1);
-
-            FileInfo fileInfo = new FileInfo(this.FOLDERPATH, fileName, fileType, file.length()/1024.0);
-            names.add(fileInfo);
+                FileInfo fileInfo = new FileInfo(this.FOLDERPATH, fileName, fileType, file.length() / 1024.0);
+                names.add(fileInfo);
+            }
         }
     }
 
