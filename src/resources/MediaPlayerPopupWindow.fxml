@@ -11,8 +11,8 @@
             fx:controller="controllers.MediaPlayerPopupController"
             prefHeight="400.0" prefWidth="600.0">
     <Label fx:id="labelPopup" style="-fx-font-size: 12;"/>
-    <HBox spacing="25" prefWidth="600" prefHeight="50" layoutY="275" alignment="CENTER" >
-        <Button fx:id="pauseButton" text="Select Folder" prefWidth="100" onAction="#pauseButtonPressed"/>
+    <HBox spacing="25" prefWidth="600" prefHeight="50" layoutY="350" alignment="CENTER" >
+        <Button fx:id="pauseButton" text="Pause" prefWidth="100" onAction="#pauseButtonPressed"/>
         <Button fx:id="playButton" text="Play" prefWidth="100" onAction="#playButtonPressed"/>
         <Button fx:id="quitButton" text="Quit" prefWidth="100" onAction="#quitButtonPressed"/>
     </HBox>

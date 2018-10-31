@@ -2,18 +2,29 @@ package controllers;
 
 import classes.*;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
+import javafx.beans.property.DoubleProperty;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.media.MediaView;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
+
+import javazoom.jl.decoder.JavaLayerException;
+import javazoom.jl.player.Player;
+
+import javax.swing.*;
 import java.io.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -89,11 +100,29 @@ public class MyMediaPlayerController {
                 String name = s != null ? s.getName() : "NULL";
                 File file = new File(sharedFolder.getFolderPath() + File.separator + name + "." + s.getType());
 
+                Media hit = new Media(file.toURI().toString());
+                MediaPlayer mediaPlayer = new MediaPlayer(hit);
+                mediaPlayer.play();
+
+                MediaView viewer = new MediaView(mediaPlayer);
+
+                //change width and height to fit video
+
+
                 FXMLLoader loader = new FXMLLoader(getClass().getResource("../resources/MediaPlayerPopupWindow.fxml"));
                 this.anchorPane = loader.load();
+                this.anchorPane.getChildren().add(viewer);
+
+                createNewStage("TEST");
+
+                DoubleProperty width = viewer.fitWidthProperty();
+                DoubleProperty height = viewer.fitHeightProperty();
+                width.bind(Bindings.selectDouble(viewer.sceneProperty(), "width"));
+                height.bind(Bindings.selectDouble(viewer.sceneProperty(), "height"));
+                viewer.setPreserveRatio(true);
                 MediaPlayerPopupController myController = loader.getController();
                 myController.setLabelPopupText(name);
-                createNewStage("TEST");
+
             } catch (IOException | NullPointerException e) {
                 e.printStackTrace();
             }
@@ -211,6 +240,7 @@ public class MyMediaPlayerController {
     private void createNewStage(String title){
         StackPane sp = new StackPane();
         sp.getChildren().add(this.anchorPane);
+        sp.setAlignment(this.anchorPane, Pos.CENTER);
 
         Scene scene = new Scene(sp);
         Stage stage = new Stage();
