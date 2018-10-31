@@ -54,7 +54,7 @@ public class MediaPlayerPopupController {
         this.mediaPlayer.play();
     }
 
-    private void quitButtonPressed() {
+    public void quitButtonPressed() {
         this.mediaPlayer.stop();
         Stage stage = (Stage)this.playButton.getScene().getWindow();
         stage.close();

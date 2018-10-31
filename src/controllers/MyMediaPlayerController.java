@@ -2,6 +2,7 @@ package controllers;
 
 import classes.*;
 import javafx.application.Platform;
+import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
@@ -11,11 +12,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.StackPane;
-import javafx.stage.DirectoryChooser;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
-
-import javafx.stage.StageStyle;
+import javafx.stage.*;
 
 import java.io.*;
 import java.util.concurrent.ExecutorService;
@@ -100,7 +97,7 @@ public class MyMediaPlayerController {
                 this.anchorPane = loader.load();
                 myController.setLabelPopupText(name);
 
-                createNewStage();
+                createNewStage(myController);
             } catch (IOException | NullPointerException e) {
                 e.printStackTrace();
             }
@@ -195,7 +192,7 @@ public class MyMediaPlayerController {
         });
     }
 
-    private void createNewStage(){
+    private void createNewStage(MediaPlayerPopupController myController){
         String title = "Media Player";
 
         StackPane sp = new StackPane();
@@ -209,6 +206,9 @@ public class MyMediaPlayerController {
         stage.setScene(scene);
         stage.setResizable(false);
         stage.initOwner(this.playButton.getScene().getWindow());
+        stage.setOnCloseRequest(event ->
+            myController.quitButtonPressed()
+        );
         stage.showAndWait();
     }
 
