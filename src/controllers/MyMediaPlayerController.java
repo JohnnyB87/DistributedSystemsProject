@@ -87,9 +87,9 @@ public class MyMediaPlayerController {
 //                String type = s != null ? s.getType() : "NULL";
 //                File file = new File(sharedFolder.getFolderPath() + File.separator + name + "." + type);
 
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("../resources/MediaPlayerPopupWindow.fxml"));
+                FXMLLoader loader = new FXMLLoader(getClass().getResource("../resources/MyMediaPlayerPopupWindow.fxml"));
 
-                MediaPlayerPopupController myController = new MediaPlayerPopupController(s);
+                MyMediaPlayerPopupController myController = new MyMediaPlayerPopupController(s);
                 loader.setController(myController);
                 this.anchorPane = loader.load();
                 myController.setLabelPopupText(name);
@@ -189,7 +189,7 @@ public class MyMediaPlayerController {
         });
     }
 
-    private void createNewStage(MediaPlayerPopupController myController){
+    private void createNewStage(MyMediaPlayerPopupController myController){
         String title = "Media Player";
 
         StackPane sp = new StackPane();

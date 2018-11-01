@@ -1,18 +1,25 @@
 package controllers;
 
 import classes.FileInfo;
+import javafx.application.Platform;
+import javafx.beans.InvalidationListener;
+import javafx.beans.Observable;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 import java.io.File;
 
-public class MediaPlayerPopupController {
+public class MyMediaPlayerPopupController {
 
     @FXML private Label labelPopup;
     @FXML private Button pauseButton;
@@ -20,11 +27,14 @@ public class MediaPlayerPopupController {
     @FXML private Button quitButton;
     @FXML private MediaView mediaView;
     @FXML private AnchorPane anchorPane;
+    @FXML private HBox mediaBar;
+    private Slider timeSlider;
+    private Duration duration;
 
     private MediaPlayer mediaPlayer;
     private FileInfo fileToPlay;
 
-    MediaPlayerPopupController(FileInfo fileToPlay) {
+    MyMediaPlayerPopupController(FileInfo fileToPlay) {
         this.fileToPlay = fileToPlay;
     }
 
@@ -72,7 +82,8 @@ public class MediaPlayerPopupController {
                 mediaView.setMediaPlayer(mediaPlayer);
                 mediaView.setPreserveRatio(true);
                 if(type.equalsIgnoreCase("mp3")){
-                    this.anchorPane.maxHeight(200);
+                    System.out.println("MP3 playing");
+                    this.anchorPane.prefHeight(200);
                     this.mediaView.setFitHeight(0);
                 }
             }

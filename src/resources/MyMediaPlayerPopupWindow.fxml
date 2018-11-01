@@ -11,8 +11,8 @@
     <Label fx:id="labelPopup" style="-fx-font-size: 20;" alignment="CENTER"/>
     <MediaView fx:id="mediaView" fitHeight="350" fitWidth="${anchorPane.width}" layoutY="40.0" />
     <HBox spacing="25" prefWidth="600" prefHeight="50" layoutY="390" alignment="CENTER" >
-        <Button fx:id="pauseButton" text="Pause" prefWidth="100" />
-        <Button fx:id="playButton" text="Play" prefWidth="100" />
-        <Button fx:id="quitButton" text="Quit" prefWidth="100" />
+        <Button fx:id="playButton" text=">" prefWidth="50" />
+        <Button fx:id="pauseButton" text="||" prefWidth="50" />
+        <Button fx:id="quitButton" text="X" prefWidth="50" />
     </HBox>
 </AnchorPane>
