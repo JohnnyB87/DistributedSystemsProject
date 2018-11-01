@@ -1,5 +1,7 @@
 package classes;
 
+import java.io.File;
+
 public class FileInfo implements Comparable<FileInfo>{
 
     private String location;
@@ -67,5 +69,16 @@ public class FileInfo implements Comparable<FileInfo>{
 
     public String toString(){
         return String.format("%s.%s", this.name, this.type);
+    }
+
+    public static FileInfo createFileInfo(String path, String fileName){
+        File f = new File(path + File.separator + fileName);
+        FileInfo file = new FileInfo();
+        file.setName(fileName.substring(0, fileName.lastIndexOf(".")));
+        file.setType(fileName.substring(fileName.lastIndexOf(".") + 1));
+        file.setLocation(path);
+        file.setSize(f.length()/1024.0);
+
+        return file;
     }
 }

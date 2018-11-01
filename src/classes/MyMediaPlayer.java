@@ -2,9 +2,11 @@ package classes;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.util.ArrayList;
+
+import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 
 public class MyMediaPlayer implements Runnable{
 
@@ -15,12 +17,13 @@ public class MyMediaPlayer implements Runnable{
     private File localFolder;
     private ArrayList<FileInfo> fileInfo;
     private boolean isChanged;
+    private String folderPath;
 
     //--------------------------------
     //      CONSTRUCTORS
     //--------------------------------
     public MyMediaPlayer() {
-        this.MONITOR = Main.getMonitor();
+        this.MONITOR = Monitor.getInstance();
     }
 
     //--------------------------------
@@ -42,6 +45,7 @@ public class MyMediaPlayer implements Runnable{
     //      SETTERS
     //--------------------------------
     public void setLocalFolder(File localFolder) {
+        this.folderPath = localFolder.getAbsolutePath();
         this.localFolder = localFolder;
     }
 
@@ -54,7 +58,7 @@ public class MyMediaPlayer implements Runnable{
     //--------------------------------
     @Override
     public void run() {
-
+        watchDirectory();
     }
 
     //--------------------------------
@@ -107,7 +111,7 @@ public class MyMediaPlayer implements Runnable{
     public void downLoadFile(FileInfo file){
         if(file != null && !this.fileExists(file)) {
             String source = this.MONITOR.getFolderPath();
-            String destination = this.localFolder.getAbsolutePath();
+            String destination = this.folderPath;
             this.copyFile(file, source, destination);
             this.addFile(file);
             this.isChanged = true;
@@ -136,4 +140,39 @@ public class MyMediaPlayer implements Runnable{
         return false;
     }
 
+    private void watchDirectory(){
+        Path path = Paths.get(this.folderPath);
+        FileSystem fs = FileSystems.getDefault();
+        try {
+            WatchService service = fs.newWatchService();
+            path.register(service, ENTRY_CREATE, ENTRY_DELETE);
+            WatchKey key;
+            do {
+                key = service.take();
+//                System.out.println(key.pollEvents());
+                for (WatchEvent event : key.pollEvents()) {
+                    WatchEvent.Kind kind = event.kind();
+                    String fileName = event.context().toString();
+
+                    FileInfo file = FileInfo.createFileInfo(this.folderPath, fileName);
+
+                    if (StandardWatchEventKinds.ENTRY_CREATE.equals(kind)) {
+                        isChanged = true;
+                        System.out.println("File Created:" + fileName);
+                        this.addFile(file);
+                    } else if (StandardWatchEventKinds.ENTRY_DELETE.equals(kind)) {
+                        isChanged = true;
+                        System.out.println("File deleted: " + fileName);
+                    }
+                    System.out.println(isChanged);
+                }
+
+            } while (key.reset());
+        }catch(InterruptedException ie){
+            Thread.currentThread().interrupt();
+            System.out.println("InterruptedException: --> Class: Monitor --> watchDirectory()");
+        }catch (IOException ioe) {
+            System.out.println("IOException: --> Class: Monitor --> Method: watchDirectory()");
+        }
+    }
 }

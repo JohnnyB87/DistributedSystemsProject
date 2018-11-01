@@ -29,11 +29,14 @@ public class MyMediaPlayerController {
     @FXML private Button uploadButton;
     @FXML private TextField serverIpTxtBox;
     @FXML private Button connectButton;
+
     private Monitor sharedFolder;
     private MyMediaPlayer localFolder;
     private Alert alert;
     private boolean clientIsSelected = false;
     private boolean serverIsSelected = false;
+    private Thread shared;
+    private Thread local;
 
     @FXML
     private void initialize(){
@@ -45,10 +48,8 @@ public class MyMediaPlayerController {
         clientTableSelected();
         serverTableSelected();
 
-        ExecutorService application = Executors.newCachedThreadPool();
-        application.execute( this.sharedFolder );
-        application.shutdown();
-
+        shared = new Thread(this.sharedFolder);
+        shared.start();
     }
 
     public void connectButtonPressed() {
@@ -56,6 +57,7 @@ public class MyMediaPlayerController {
     }
 
     public void quitButtonPressed() {
+
         Platform.exit();
     }
 
@@ -68,7 +70,10 @@ public class MyMediaPlayerController {
             this.localFolder.setLocalFolder(selectedFolder);
             this.localFolder.folderItemsToArrayList();
             this.clientTable.getItems().addAll(this.localFolder.getFileInfo());
+            local = new Thread(this.localFolder);
+            local.start();
         }catch(Exception e){
+            e.printStackTrace();
             System.out.println("Folder not selected.");
             alert = new Alert(Alert.AlertType.ERROR, "No folder selected");
             alert.show();
@@ -208,5 +213,4 @@ public class MyMediaPlayerController {
         );
         stage.showAndWait();
     }
-
 }

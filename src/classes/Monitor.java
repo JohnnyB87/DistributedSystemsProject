@@ -11,24 +11,28 @@ import static java.nio.file.StandardWatchEventKinds.*;
 
 public class Monitor implements Viewer, Runnable {
 
-    private final String FOLDER_PATH = System.getProperty("user.home") + File.separator + "Desktop" + File.separator + "Shared Folder";
-    private File folder;
-    private ArrayList<FileInfo> names;
-    private boolean isChanged;
+    private static Monitor instance;
+    private static final String FOLDER_PATH = System.getProperty("user.home") + File.separator + "Desktop" + File.separator + "Shared Folder";
+    private static File folder;
+    private static ArrayList<FileInfo> names;
+    private static boolean isChanged;
 
     //---------------------------
     //      CONSTRUCTORS
     //---------------------------
-    public Monitor() {
-        this.folder = new File(this.FOLDER_PATH);
-        this.names = new ArrayList<>();
-        if (!this.folder.exists()) {
-            this.folder.mkdir();
+
+    public static Monitor getInstance(){
+        if(instance == null) {
+            instance = new Monitor();
+            folder = new File(FOLDER_PATH);
+            names = new ArrayList<>();
+            if (!folder.exists()) {
+                folder.mkdir();
+            }else{
+                populateArray();
+            }
         }
-        else{
-            System.out.println("Already Exists");
-            populateArray();
-        }
+        return instance;
     }
 
     //---------------------------
@@ -47,14 +51,14 @@ public class Monitor implements Viewer, Runnable {
     //---------------------------
     @Override
     public ArrayList<FileInfo> getNames() {
-        return this.names;
+        return names;
     }
 
     @Override
     public boolean openFile(String name){
         try {
-            if (this.names != null) {
-                for (FileInfo fileName : this.names)
+            if (names != null) {
+                for (FileInfo fileName : names)
                     if (name.equalsIgnoreCase(fileName.getName()))
                         return true;
             }
@@ -91,28 +95,28 @@ public class Monitor implements Viewer, Runnable {
     //---------------------------
     //      EXTRA FUNCTIONALITY
     //---------------------------
-    private void populateArray() {
-        String[] array = this.folder.list();
-        this.names.clear();
+    private static void populateArray() {
+        String[] array = folder.list();
+        names.clear();
         if(array != null) {
             for (String s : array) {
-                File file = new File(this.FOLDER_PATH + File.separator + s);
+                File file = new File(FOLDER_PATH + File.separator + s);
 
                 String fileName = s.substring(0, s.lastIndexOf("."));
                 String fileType = s.substring(s.lastIndexOf(".") + 1);
 
-                FileInfo fileInfo = new FileInfo(this.FOLDER_PATH, fileName, fileType, file.length() / 1024.0);
+                FileInfo fileInfo = new FileInfo(FOLDER_PATH, fileName, fileType, file.length() / 1024.0);
                 names.add(fileInfo);
             }
         }
     }
 
     private void addFile(FileInfo file){
-        this.names.add(file);
+        names.add(file);
     }
 
     public boolean fileExists(FileInfo file){
-        for(FileInfo f : this.names){
+        for(FileInfo f : names){
             if(file.compareTo(f) == 0)
                 return true;
         }
@@ -120,7 +124,7 @@ public class Monitor implements Viewer, Runnable {
     }
 
     private void watchDirectory(){
-        Path path = Paths.get(this.FOLDER_PATH);
+        Path path = Paths.get(FOLDER_PATH);
         FileSystem fs = FileSystems.getDefault();
         try {
             WatchService service = fs.newWatchService();
@@ -133,7 +137,7 @@ public class Monitor implements Viewer, Runnable {
                     WatchEvent.Kind kind = event.kind();
                     String fileName = event.context().toString();
 
-                    FileInfo file = createFileInfo(fileName);
+                    FileInfo file = FileInfo.createFileInfo(this.FOLDER_PATH, fileName);
 
                     if (StandardWatchEventKinds.ENTRY_CREATE.equals(kind)) {
                         isChanged = true;
@@ -145,23 +149,25 @@ public class Monitor implements Viewer, Runnable {
                     }
                     System.out.println(isChanged);
                 }
+
             } while (key.reset());
         }catch(InterruptedException ie){
+            Thread.currentThread().interrupt();
             System.out.println("InterruptedException: --> Class: Monitor --> watchDirectory()");
         }catch (IOException ioe) {
             System.out.println("IOException: --> Class: Monitor --> Method: watchDirectory()");
         }
     }
 
-    private FileInfo createFileInfo(String fileName){
-        File f = new File(this.FOLDER_PATH + File.separator + fileName);
-        FileInfo file = new FileInfo();
-        file.setName(fileName.substring(0, fileName.lastIndexOf(".")));
-        file.setType(fileName.substring(fileName.lastIndexOf(".") + 1));
-        file.setLocation(this.FOLDER_PATH);
-        file.setSize(f.length()/1024.0);
-
-        return file;
-    }
+//    private FileInfo createFileInfo(String fileName){
+//        File f = new File(this.FOLDER_PATH + File.separator + fileName);
+//        FileInfo file = new FileInfo();
+//        file.setName(fileName.substring(0, fileName.lastIndexOf(".")));
+//        file.setType(fileName.substring(fileName.lastIndexOf(".") + 1));
+//        file.setLocation(this.FOLDER_PATH);
+//        file.setSize(f.length()/1024.0);
+//
+//        return file;
+//    }
 
 }

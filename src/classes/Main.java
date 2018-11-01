@@ -9,8 +9,6 @@ import javafx.stage.Stage;
 
 public class Main extends Application {
 
-    private static final Monitor SHARED_MONITOR = new Monitor();
-
     @Override
     public void start(Stage primaryStage) throws Exception{
         primaryStage.setTitle("My Media Player");
@@ -26,10 +24,6 @@ public class Main extends Application {
         primaryStage.setScene(scene);
         primaryStage.setResizable(false);
         primaryStage.show();
-    }
-
-    public static Monitor getMonitor(){
-        return SHARED_MONITOR;
     }
 
     public static void main(String[] args) {
