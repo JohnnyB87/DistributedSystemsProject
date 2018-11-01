@@ -2,10 +2,8 @@ package controllers;
 
 import classes.*;
 import javafx.application.Platform;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -54,7 +52,6 @@ public class MyMediaPlayerController {
     }
 
     public void connectButtonPressed() {
-
         System.out.println("Hello");
     }
 

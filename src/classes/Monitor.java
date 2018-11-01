@@ -11,7 +11,7 @@ import static java.nio.file.StandardWatchEventKinds.*;
 
 public class Monitor implements Viewer, Runnable {
 
-    private final String FOLDERPATH = System.getProperty("user.home") + File.separator + "Desktop" + File.separator + "Shared Folder";
+    private final String FOLDER_PATH = System.getProperty("user.home") + File.separator + "Desktop" + File.separator + "Shared Folder";
     private File folder;
     private ArrayList<FileInfo> names;
     private boolean isChanged;
@@ -20,7 +20,7 @@ public class Monitor implements Viewer, Runnable {
     //      CONSTRUCTORS
     //---------------------------
     public Monitor() {
-        this.folder = new File(this.FOLDERPATH);
+        this.folder = new File(this.FOLDER_PATH);
         this.names = new ArrayList<>();
         if (!this.folder.exists()) {
             this.folder.mkdir();
@@ -34,8 +34,8 @@ public class Monitor implements Viewer, Runnable {
     //---------------------------
     //      GETTERS
     //---------------------------
-    public String getFolderPath() {
-        return FOLDERPATH;
+    String getFolderPath() {
+        return FOLDER_PATH;
     }
 
     public File getFolder() {
@@ -91,23 +91,23 @@ public class Monitor implements Viewer, Runnable {
     //---------------------------
     //      EXTRA FUNCTIONALITY
     //---------------------------
-    public void populateArray() {
+    private void populateArray() {
         String[] array = this.folder.list();
         this.names.clear();
         if(array != null) {
             for (String s : array) {
-                File file = new File(this.FOLDERPATH + File.separator + s);
+                File file = new File(this.FOLDER_PATH + File.separator + s);
 
                 String fileName = s.substring(0, s.lastIndexOf("."));
                 String fileType = s.substring(s.lastIndexOf(".") + 1);
 
-                FileInfo fileInfo = new FileInfo(this.FOLDERPATH, fileName, fileType, file.length() / 1024.0);
+                FileInfo fileInfo = new FileInfo(this.FOLDER_PATH, fileName, fileType, file.length() / 1024.0);
                 names.add(fileInfo);
             }
         }
     }
 
-    public void addFile(FileInfo file){
+    private void addFile(FileInfo file){
         this.names.add(file);
     }
 
@@ -119,8 +119,8 @@ public class Monitor implements Viewer, Runnable {
         return false;
     }
 
-    public void watchDirectory(){
-        Path path = Paths.get(this.FOLDERPATH);
+    private void watchDirectory(){
+        Path path = Paths.get(this.FOLDER_PATH);
         FileSystem fs = FileSystems.getDefault();
         try {
             WatchService service = fs.newWatchService();
@@ -128,7 +128,6 @@ public class Monitor implements Viewer, Runnable {
             WatchKey key;
             do {
                 key = service.take();
-
 //                System.out.println(key.pollEvents());
                 for (WatchEvent event : key.pollEvents()) {
                     WatchEvent.Kind kind = event.kind();
@@ -140,30 +139,26 @@ public class Monitor implements Viewer, Runnable {
                         isChanged = true;
                         System.out.println("File Created:" + fileName);
                         this.addFile(file);
-//                    } else if (StandardWatchEventKinds.ENTRY_MODIFY.equals(kind)) {
-//                        isChanged = true;
-//                        System.out.println("New path modified: " + fileName);
-                    }else if (StandardWatchEventKinds.ENTRY_DELETE.equals(kind)) {
+                    } else if (StandardWatchEventKinds.ENTRY_DELETE.equals(kind)) {
                         isChanged = true;
-                        System.out.println("Path deleted: " + fileName);
+                        System.out.println("File deleted: " + fileName);
                     }
-
                     System.out.println(isChanged);
                 }
-
             } while (key.reset());
-
-        } catch (IOException | InterruptedException ioe) {
-            System.out.println("Error: --> Class: Monitor --> Method: watchDirectory()");
+        }catch(InterruptedException ie){
+            System.out.println("InterruptedException: --> Class: Monitor --> watchDirectory()");
+        }catch (IOException ioe) {
+            System.out.println("IOException: --> Class: Monitor --> Method: watchDirectory()");
         }
     }
 
     private FileInfo createFileInfo(String fileName){
-        File f = new File(this.FOLDERPATH + File.separator + fileName);
+        File f = new File(this.FOLDER_PATH + File.separator + fileName);
         FileInfo file = new FileInfo();
         file.setName(fileName.substring(0, fileName.lastIndexOf(".")));
         file.setType(fileName.substring(fileName.lastIndexOf(".") + 1));
-        file.setLocation(this.FOLDERPATH);
+        file.setLocation(this.FOLDER_PATH);
         file.setSize(f.length()/1024.0);
 
         return file;

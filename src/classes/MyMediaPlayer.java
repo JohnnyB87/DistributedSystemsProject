@@ -60,33 +60,35 @@ public class MyMediaPlayer implements Runnable{
     //--------------------------------
     //      EXTRA FUNCTIONALITY
     //--------------------------------
-    public void folderItemsToArrayList(){
+    public void folderItemsToArrayList() {
         String path = this.localFolder.getAbsolutePath();
         String[] array = this.localFolder.list();
         fileInfo = new ArrayList<>();
 
-        for(String s : array){
-            File file = new File(path + File.separator + s);
+        if (array != null) {
+            for (String s : array) {
+                File file = new File(path + File.separator + s);
 
-            String fileName = s.substring(0, s.lastIndexOf("."));
-            String fileType = s.substring(s.lastIndexOf(".") + 1);
+                String fileName = s.substring(0, s.lastIndexOf("."));
+                String fileType = s.substring(s.lastIndexOf(".") + 1);
 
-            FileInfo fileInfo = new FileInfo(path, fileName, fileType, file.length()/1024.0);
-            this.fileInfo.add(fileInfo);
+                FileInfo fileInfo = new FileInfo(path, fileName, fileType, file.length() / 1024.0);
+                this.fileInfo.add(fileInfo);
 
+            }
         }
     }
 
     private void copyFile(FileInfo file, String source, String destination){
         try {
             String fileName = file.getName() + "." + file.getType();
-            source = String.format("%s%s", source, File.separator + fileName);
-            destination = destination + File.separator + fileName;
+            String sourcePath = String.format("%s%s", source, File.separator + fileName);
+            String destinationPath = String.format("%s%s",destination, File.separator + fileName);
 
-            Files.copy(Paths.get(source), Paths.get(destination));
+            Files.copy(Paths.get(sourcePath), Paths.get(destinationPath));
 
-            System.out.println("Successful Copy\nSource: " + source);
-            System.out.println("Destination: " + destination);
+            System.out.println("Successful Copy\nSource: " + sourcePath);
+            System.out.println("Destination: " + destinationPath);
         }catch(IOException ioe){
             System.out.println("IOException: Class --> MyMediaPlayer --> copyFile()");
         }
