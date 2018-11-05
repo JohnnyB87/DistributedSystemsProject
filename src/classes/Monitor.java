@@ -158,16 +158,4 @@ public class Monitor implements Viewer, Runnable {
             System.out.println("IOException: --> Class: Monitor --> Method: watchDirectory()");
         }
     }
-
-//    private FileInfo createFileInfo(String fileName){
-//        File f = new File(this.FOLDER_PATH + File.separator + fileName);
-//        FileInfo file = new FileInfo();
-//        file.setName(fileName.substring(0, fileName.lastIndexOf(".")));
-//        file.setType(fileName.substring(fileName.lastIndexOf(".") + 1));
-//        file.setLocation(this.FOLDER_PATH);
-//        file.setSize(f.length()/1024.0);
-//
-//        return file;
-//    }
-
 }

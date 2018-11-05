@@ -13,8 +13,6 @@ import javafx.scene.layout.StackPane;
 import javafx.stage.*;
 
 import java.io.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class MyMediaPlayerController {
 
@@ -35,8 +33,8 @@ public class MyMediaPlayerController {
     private Alert alert;
     private boolean clientIsSelected = false;
     private boolean serverIsSelected = false;
-    private Thread shared;
-    private Thread local;
+    private Thread sharedThread;
+    private Thread localThread;
 
     @FXML
     private void initialize(){
@@ -48,8 +46,8 @@ public class MyMediaPlayerController {
         clientTableSelected();
         serverTableSelected();
 
-        shared = new Thread(this.sharedFolder);
-        shared.start();
+        sharedThread = new Thread(this.sharedFolder);
+        sharedThread.start();
     }
 
     public void connectButtonPressed() {
@@ -57,7 +55,7 @@ public class MyMediaPlayerController {
     }
 
     public void quitButtonPressed() {
-
+        stopThreads();
         Platform.exit();
     }
 
@@ -70,8 +68,8 @@ public class MyMediaPlayerController {
             this.localFolder.setLocalFolder(selectedFolder);
             this.localFolder.folderItemsToArrayList();
             this.clientTable.getItems().addAll(this.localFolder.getFileInfo());
-            local = new Thread(this.localFolder);
-            local.start();
+            localThread = new Thread(this.localFolder);
+            localThread.start();
         }catch(Exception e){
             e.printStackTrace();
             System.out.println("Folder not selected.");
@@ -107,8 +105,9 @@ public class MyMediaPlayerController {
     }
 
     public void uploadButtonPressed() {
+        System.out.println(this.localFolder);
         if(this.localFolder.getLocalFolder() != null){
-            int selected = this.serverTable.getSelectionModel().getSelectedIndex();
+            int selected = this.clientTable.getSelectionModel().getSelectedIndex();
             System.out.println("Index: " + selected);
             if (selected > -1) {
                 System.out.println("Index: " + this.clientTable.getSelectionModel().getFocusedIndex());
@@ -208,9 +207,15 @@ public class MyMediaPlayerController {
         stage.setScene(scene);
         stage.setResizable(false);
         stage.initOwner(this.playButton.getScene().getWindow());
-        stage.setOnCloseRequest(event ->
-            myController.quitButtonPressed()
-        );
+        stage.setOnCloseRequest(event -> {
+            myController.quitButtonPressed();
+        });
         stage.showAndWait();
+    }
+
+    private void stopThreads(){
+        if(this.localThread != null)
+            localThread.interrupt();
+        sharedThread.interrupt();
     }
 }
