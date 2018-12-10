@@ -22,8 +22,8 @@ public class MyMediaPlayer implements Runnable{
     private String folderPath;
     private Socket connectToServer;
     private static int SOCKET_PORT_NO = 1234;
-    private OutputStream out;
-    private InputStream in;
+    private ObjectOutputStream out;
+    private ObjectInputStream in;
     private String ipAddress;
 
     //--------------------------------
@@ -117,23 +117,16 @@ public class MyMediaPlayer implements Runnable{
             File f = new File(file.getAbsolutePath());
             MONITOR.setFileInfo(FileInfo.createFileInfo(f.getPath(), f.getName()));
             try {
-                System.out.println(f.length());
-                connectToServer = new Socket(ipAddress, SOCKET_PORT_NO);
-                in = new FileInputStream(f);
-                out = connectToServer.getOutputStream();
-                byte[] bytes = new byte[8192];
-
-                int count = 0;
-                System.out.println("START WHILE LOOP: " + count);
-                while((count = (in.read(bytes))) > 0){
-                    System.out.println("INSIDE WHILE LOOP: " + count);
-                    out.write(bytes, 0, count);
-                }
-                System.out.println("END WHILE LOOP: " + count);
-                System.out.println("UPLOAD FINISHED");
-                out.close();
-                in.close();
-                connectToServer.close();
+                FileInputStream fInputStream = new FileInputStream(f);
+                byte b[] = new byte[fInputStream.available()];
+                fInputStream.read(b);
+                Data data = new Data();
+                data.setName(f.getName().trim());
+                data.setFile(b);
+                out.writeInt(0);
+                out.writeObject(data);
+                out.flush();
+                System.out.println("send 1 file ..\n");
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -215,6 +208,14 @@ public class MyMediaPlayer implements Runnable{
             this.ipAddress = ipAddress;
             connectToServer = new Socket(this.ipAddress, SOCKET_PORT_NO);
             System.out.println("Connection Success");
+
+            out = new ObjectOutputStream(connectToServer.getOutputStream());
+            in = new ObjectInputStream(connectToServer.getInputStream());
+            Data data = new Data();
+            data.setName("ServerConnection");
+
+            out.writeObject(data);
+            out.flush();
             return true;
         }catch(IOException e){
             new Alert(Alert.AlertType.ERROR, "Connection Failed").show();

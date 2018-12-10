@@ -110,39 +110,32 @@ public class Monitor implements Viewer, Runnable {
 
     @Override
     public void run() {
-//        try {
-////            serverSocket = new ServerSocket(SOCKET_PORT_NO);
-//            receiveFile();
-//        } catch (IOException e) {
-//            e.printStackTrace();
+
+//        if(fileInfo != null) {
+//            try {
+//                socket = serverSocket.accept();
+//                System.out.println("receiveFile() running");
+//                String fileName = fileInfo.getName() + "." + fileInfo.getType();
+//                in = socket.getInputStream();
+//                out = new FileOutputStream(FOLDER_PATH + File.separator + fileName);
+//                byte[] bytes = new byte[8192];
+//
+//                System.out.println("START WHILE LOOP");
+//                int count;
+//                while ((count = in.read(bytes)) > 0) {
+//                    System.out.println("INSIDE WHILE LOOP");
+//                    out.write(bytes, 0, count);
+//                }
+//
+//                System.out.println("END WHILE LOOP");
+//                System.out.println("receiveFile() stopped");
+//                out.close();
+//                in.close();
+//                socket.close();
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
 //        }
-
-        System.out.println("RUN(): " + fileInfo==null);
-        if(fileInfo != null) {
-            try {
-                socket = serverSocket.accept();
-                System.out.println("receiveFile() running");
-                String fileName = fileInfo.getName() + "." + fileInfo.getType();
-                in = socket.getInputStream();
-                out = new FileOutputStream(FOLDER_PATH + File.separator + fileName);
-                byte[] bytes = new byte[8192];
-
-                System.out.println("START WHILE LOOP");
-                int count;
-                while ((count = in.read(bytes)) > 0) {
-                    System.out.println("INSIDE WHILE LOOP");
-                    out.write(bytes, 0, count);
-                }
-
-                System.out.println("END WHILE LOOP");
-                out.close();
-                in.close();
-                System.out.println("receiveFile() stopped");
-                socket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
         watchDirectory();
         try {
             Thread.sleep(5000);
@@ -177,31 +170,19 @@ public class Monitor implements Viewer, Runnable {
         }
     }
 
-    public void receiveFile(FileInfo fileInfo){
-//            int current = 0;
-//            try {
-//                socket = serverSocket.accept();
-//                System.out.println("receiveFile() running");
-//                String fileName = fileInfo.getName() + "." + fileInfo.getType();
-//                in = socket.getInputStream();
-//                out = new FileOutputStream(FOLDER_PATH + File.separator + fileName);
-//                byte[] bytes = new byte[8192];
-//
-//                System.out.println("START WHILE LOOP");
-//                int count;
-//                while ((count = in.read(bytes)) > 0) {
-//                    System.out.println("INSIDE WHILE LOOP");
-//                    out.write(bytes, 0, count);
-//                }
-//
-//                System.out.println("END WHILE LOOP");
-//                out.close();
-//                in.close();
-//                System.out.println("receiveFile() stopped");
-//                socket.close();
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
+    public Data receiveFile(FileInfo fileInfo){
+            int current = 0;
+            try {
+                in = new FileInputStream(fileInfo.getAbsolutePath());
+                byte[] bytes = new byte[in.available()];
+                Data data = new Data();
+                data.setName(fileInfo.getName());
+                data.setFile(bytes);
+                in.close();
+                return data;
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
     }
 

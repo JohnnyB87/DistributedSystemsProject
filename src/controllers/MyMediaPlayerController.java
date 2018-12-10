@@ -150,7 +150,7 @@ public class MyMediaPlayerController {
                 System.out.println("Index: " + this.clientTable.getSelectionModel().getFocusedIndex());
                 FileInfo file = this.clientTable.getSelectionModel().getSelectedItems().get(0);
                 this.localFolder.uploadFile(file);
-//                this.sharedFolder.receiveFile(file);
+                this.sharedFolder.receiveFile(file);
                 if(this.sharedFolder.checkForChange())
                     serverTable.getItems().add(file);
             } else {
