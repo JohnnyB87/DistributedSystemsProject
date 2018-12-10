@@ -1,7 +1,9 @@
 package classes;
 
-import java.io.File;
-import java.io.IOException;
+import javafx.scene.control.Alert;
+
+import java.io.*;
+import java.net.Socket;
 import java.nio.file.*;
 import java.util.ArrayList;
 
@@ -18,6 +20,11 @@ public class MyMediaPlayer implements Runnable{
     private ArrayList<FileInfo> fileInfo;
     private boolean isChanged;
     private String folderPath;
+    private Socket connectToServer;
+    private static int SOCKET_PORT_NO = 1234;
+    private OutputStream out;
+    private InputStream in;
+    private String ipAddress;
 
     //--------------------------------
     //      CONSTRUCTORS
@@ -59,6 +66,11 @@ public class MyMediaPlayer implements Runnable{
     @Override
     public void run() {
         watchDirectory();
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     //--------------------------------
@@ -76,7 +88,7 @@ public class MyMediaPlayer implements Runnable{
                 String fileName = s.substring(0, s.lastIndexOf("."));
                 String fileType = s.substring(s.lastIndexOf(".") + 1);
 
-                FileInfo fileInfo = new FileInfo(path, fileName, fileType, file.length() / 1024.0);
+                FileInfo fileInfo = new FileInfo(path, fileName, fileType, (int)file.length() );
                 this.fileInfo.add(fileInfo);
 
             }
@@ -99,10 +111,32 @@ public class MyMediaPlayer implements Runnable{
     }
 
     public void uploadFile(FileInfo file){
+
         if(file != null && !MONITOR.fileExists(file)) {
-            String source = file.getLocation();
-            String destination = this.MONITOR.getFolderPath();
-            this.copyFile(file, source, destination);
+            System.out.println("UPLOAD STARTED");
+            File f = new File(file.getAbsolutePath());
+            MONITOR.setFileInfo(FileInfo.createFileInfo(f.getPath(), f.getName()));
+            try {
+                System.out.println(f.length());
+                connectToServer = new Socket(ipAddress, SOCKET_PORT_NO);
+                in = new FileInputStream(f);
+                out = connectToServer.getOutputStream();
+                byte[] bytes = new byte[8192];
+
+                int count = 0;
+                System.out.println("START WHILE LOOP: " + count);
+                while((count = (in.read(bytes))) > 0){
+                    System.out.println("INSIDE WHILE LOOP: " + count);
+                    out.write(bytes, 0, count);
+                }
+                System.out.println("END WHILE LOOP: " + count);
+                System.out.println("UPLOAD FINISHED");
+                out.close();
+                in.close();
+                connectToServer.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
         else
             System.out.println("File already exists in this Folder.");
@@ -110,11 +144,11 @@ public class MyMediaPlayer implements Runnable{
 
     public void downLoadFile(FileInfo file){
         if(file != null && !this.fileExists(file)) {
-            String source = this.MONITOR.getFolderPath();
-            String destination = this.folderPath;
-            this.copyFile(file, source, destination);
-            this.addFile(file);
-            this.isChanged = true;
+//            String source = this.MONITOR.getFolderPath();
+//            String destination = this.folderPath;
+//            this.copyFile(file, source, destination);
+//            this.addFile(file);
+//            this.isChanged = true;
         }
         else
             System.out.println("File already exists in this Folder.");
@@ -174,5 +208,17 @@ public class MyMediaPlayer implements Runnable{
         }catch (IOException ioe) {
             System.out.println("IOException: --> Class: Monitor --> Method: watchDirectory()");
         }
+    }
+
+    public boolean connectToServer(String ipAddress){
+        try {
+            this.ipAddress = ipAddress;
+            connectToServer = new Socket(this.ipAddress, SOCKET_PORT_NO);
+            System.out.println("Connection Success");
+            return true;
+        }catch(IOException e){
+            new Alert(Alert.AlertType.ERROR, "Connection Failed").show();
+        }
+        return false;
     }
 }

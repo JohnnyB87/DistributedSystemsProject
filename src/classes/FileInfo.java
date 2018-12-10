@@ -4,21 +4,23 @@ import java.io.File;
 
 public class FileInfo implements Comparable<FileInfo>{
 
+    private String absolutePath;
     private String location;
     private String name;
     private String type;
-    private double size;
+    private int size;
 
     //---------------------------
     //      CONSTRUCTORS
     //---------------------------
     public FileInfo(){}
 
-    public FileInfo(String location, String name, String type, double size){
+    public FileInfo(String location, String name, String type, int size){
         this.location = location;
         this.name = name;
         this.type = type;
         this.size = size;
+        this.absolutePath = setAbsolutePath();
     }
 
     //---------------------------
@@ -37,8 +39,12 @@ public class FileInfo implements Comparable<FileInfo>{
         return type;
     }
 
-    public double getSize() {
+    public int getSize() {
         return size;
+    }
+
+    public String getAbsolutePath() {
+        return absolutePath;
     }
 
     //---------------------------
@@ -57,8 +63,12 @@ public class FileInfo implements Comparable<FileInfo>{
         this.type = type;
     }
 
-    public void setSize(double size) {
+    public void setSize(int size) {
         this.size = size;
+    }
+
+    private String setAbsolutePath(){
+        return this.location + File.separator + this.name + "." + this.type;
     }
 
     @Override
@@ -77,7 +87,7 @@ public class FileInfo implements Comparable<FileInfo>{
         file.setName(fileName.substring(0, fileName.lastIndexOf(".")));
         file.setType(fileName.substring(fileName.lastIndexOf(".") + 1));
         file.setLocation(path);
-        file.setSize(f.length()/1024.0);
+        file.setSize((int)f.length());
 
         return file;
     }

@@ -13,6 +13,10 @@ import javafx.scene.layout.StackPane;
 import javafx.stage.*;
 
 import java.io.*;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.util.regex.Pattern;
 
 public class MyMediaPlayerController {
 
@@ -35,13 +39,24 @@ public class MyMediaPlayerController {
     private boolean serverIsSelected = false;
     private Thread sharedThread;
     private Thread localThread;
+    private static final Pattern PATTERN = Pattern.compile(
+            "^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");
+
+
+    private ServerSocket serverSocket;
+    private Socket socket;
+    private static final int SOCKET_PORT_NO = 1234;
+    private OutputStream out;
+    private InputStream in;
+    private String filePath;
+
 
     @FXML
     private void initialize(){
 
         this.localFolder = new MyMediaPlayer();
         this.sharedFolder = this.localFolder.getMonitor();
-        serverTable.getItems().addAll(this.sharedFolder.getNames());
+//        serverTable.getItems().addAll(this.sharedFolder.getNames());
 
         clientTableSelected();
         serverTableSelected();
@@ -51,7 +66,29 @@ public class MyMediaPlayerController {
     }
 
     public void connectButtonPressed() {
-        System.out.println("Hello");
+        System.out.println("Connecting to server");
+        String ipAddress = this.serverIpTxtBox.getText();
+        boolean isValidIpAddress = validateIpAddress(ipAddress.trim());
+        if(isValidIpAddress){
+            if(localFolder.connectToServer(ipAddress))
+                serverTable.getItems().addAll(this.sharedFolder.getNames());
+            else
+                new Alert(Alert.AlertType.ERROR, "Connection Failed").show();
+        }else{
+            new Alert(Alert.AlertType.ERROR, "Invalid Ip Address Entered").show();
+        }
+    }
+
+    private void startServer(){
+        new Thread(() -> {
+            try {
+                serverSocket = new ServerSocket(SOCKET_PORT_NO);
+                socket = serverSocket.accept();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }).start();
     }
 
     public void quitButtonPressed() {
@@ -113,17 +150,16 @@ public class MyMediaPlayerController {
                 System.out.println("Index: " + this.clientTable.getSelectionModel().getFocusedIndex());
                 FileInfo file = this.clientTable.getSelectionModel().getSelectedItems().get(0);
                 this.localFolder.uploadFile(file);
+//                this.sharedFolder.receiveFile(file);
                 if(this.sharedFolder.checkForChange())
                     serverTable.getItems().add(file);
             } else {
                 System.out.println("Select item to upload");
-                alert = new Alert(Alert.AlertType.ERROR, "No file selected");
-                alert.show();
+                new Alert(Alert.AlertType.ERROR, "No file selected").show();
             }
         }else {
             System.out.println("Select folder first");
-            alert = new Alert(Alert.AlertType.ERROR, "No folder selected");
-            alert.show();
+            new Alert(Alert.AlertType.ERROR, "No folder selected").show();
         }
     }
 
@@ -217,5 +253,9 @@ public class MyMediaPlayerController {
         if(this.localThread != null)
             localThread.interrupt();
         sharedThread.interrupt();
+    }
+
+    private boolean validateIpAddress(String ipAddress){
+        return PATTERN.matcher(ipAddress).matches();
     }
 }
