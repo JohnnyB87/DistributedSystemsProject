@@ -23,7 +23,7 @@ public class MyMediaPlayer implements Runnable{
     private Socket connectToServer;
     private static int SOCKET_PORT_NO = 1234;
     private ObjectOutputStream out;
-    private ObjectInputStream in;
+    private BufferedReader in;
     private String ipAddress;
 
     //--------------------------------
@@ -65,12 +65,13 @@ public class MyMediaPlayer implements Runnable{
     //--------------------------------
     @Override
     public void run() {
+
         watchDirectory();
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            Thread.sleep(5000);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
     }
 
     //--------------------------------
@@ -113,23 +114,50 @@ public class MyMediaPlayer implements Runnable{
     public void uploadFile(FileInfo file){
 
         if(file != null && !MONITOR.fileExists(file)) {
+            if(connectToServer.isClosed()){
+                try {
+                    connectToServer = new Socket(this.ipAddress, SOCKET_PORT_NO);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
             System.out.println("UPLOAD STARTED");
             File f = new File(file.getAbsolutePath());
             MONITOR.setFileInfo(FileInfo.createFileInfo(f.getPath(), f.getName()));
-            try {
-                FileInputStream fInputStream = new FileInputStream(f);
-                byte b[] = new byte[fInputStream.available()];
-                fInputStream.read(b);
-                Data data = new Data();
-                data.setName(f.getName().trim());
-                data.setFile(b);
-                out.writeInt(0);
-                out.writeObject(data);
-                out.flush();
-                System.out.println("send 1 file ..\n");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+
+            new Thread(() -> {
+                try{
+                    //handle file read
+                    System.out.println(file.getAbsolutePath());
+                    File myFile = new File(file.getAbsolutePath());
+                    byte[] bytes = new byte[(int) myFile.length()];
+
+                    System.out.println("byte[] created");
+
+                    FileInputStream fis = new FileInputStream(myFile);
+                    BufferedInputStream bis = new BufferedInputStream(fis);
+                    //bis.read(bytes, 0, bytes.length);
+
+                    DataInputStream dis = new DataInputStream(bis);
+                    dis.readFully(bytes, 0, bytes.length);
+                    //handle file send over socket
+                    OutputStream os = connectToServer.getOutputStream();
+
+                    //Sending file name and file size to the server
+                    DataOutputStream dos = new DataOutputStream(os);
+                    dos.writeUTF(myFile.getName());
+                    dos.writeLong(bytes.length);
+                    dos.write(bytes, 0, bytes.length);
+                    dos.flush();
+                    connectToServer.close();
+                    System.out.println("File "+file.getName()+" sent to client.");
+                    Thread.sleep(2000);
+                } catch (Exception e) {
+                    System.err.println("File does not exist!");
+                    e.printStackTrace();
+                }
+            }).start();
+
         }
         else
             System.out.println("File already exists in this Folder.");
@@ -137,11 +165,36 @@ public class MyMediaPlayer implements Runnable{
 
     public void downLoadFile(FileInfo file){
         if(file != null && !this.fileExists(file)) {
-//            String source = this.MONITOR.getFolderPath();
-//            String destination = this.folderPath;
-//            this.copyFile(file, source, destination);
-//            this.addFile(file);
-//            this.isChanged = true;
+            try {
+                System.out.println("Client Downloading...");
+                int bytesRead;
+                if(connectToServer.isClosed()){
+                    connectToServer = new Socket(this.ipAddress, SOCKET_PORT_NO);
+                }
+                Thread.sleep(3000);
+                DataInputStream clientData = new DataInputStream(connectToServer.getInputStream());
+
+                String fileName = clientData.readUTF();
+                System.out.println("File Path: " + fileName);
+                OutputStream output = new FileOutputStream(folderPath + File.separator + fileName);
+                long size = clientData.readLong();
+                byte[] buffer = new byte[1024];
+                while (size > 0 && (bytesRead = clientData.read(buffer, 0, (int) Math.min(buffer.length, size))) != -1) {
+                    output.write(buffer, 0, bytesRead);
+                    size -= bytesRead;
+                }
+
+                output.close();
+                connectToServer.close();
+
+                System.out.println("File "+file.getName()+" received from Server.");
+                System.out.println("Downloading Finished");
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            } catch (InterruptedException e) {
+                System.out.println("downloadFile(): Thread.sleep()");
+                e.printStackTrace();
+            }
         }
         else
             System.out.println("File already exists in this Folder.");
@@ -208,18 +261,11 @@ public class MyMediaPlayer implements Runnable{
             this.ipAddress = ipAddress;
             connectToServer = new Socket(this.ipAddress, SOCKET_PORT_NO);
             System.out.println("Connection Success");
-
-            out = new ObjectOutputStream(connectToServer.getOutputStream());
-            in = new ObjectInputStream(connectToServer.getInputStream());
-            Data data = new Data();
-            data.setName("ServerConnection");
-
-            out.writeObject(data);
-            out.flush();
             return true;
         }catch(IOException e){
             new Alert(Alert.AlertType.ERROR, "Connection Failed").show();
         }
         return false;
     }
+
 }

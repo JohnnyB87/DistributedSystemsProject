@@ -49,6 +49,7 @@ public class MyMediaPlayerController {
     private OutputStream out;
     private InputStream in;
     private String filePath;
+    private String ipAddress;
 
 
     @FXML
@@ -70,8 +71,10 @@ public class MyMediaPlayerController {
         String ipAddress = this.serverIpTxtBox.getText();
         boolean isValidIpAddress = validateIpAddress(ipAddress.trim());
         if(isValidIpAddress){
-            if(localFolder.connectToServer(ipAddress))
+            if(localFolder.connectToServer(ipAddress)) {
+                this.ipAddress = ipAddress;
                 serverTable.getItems().addAll(this.sharedFolder.getNames());
+            }
             else
                 new Alert(Alert.AlertType.ERROR, "Connection Failed").show();
         }else{
@@ -169,6 +172,9 @@ public class MyMediaPlayerController {
             System.out.println("Index: " + selected);
             if (selected > -1) {
                 FileInfo file = this.serverTable.getSelectionModel().getSelectedItems().get(0);
+//                if(this.localFolder.getConnectToServer().isClosed())
+//                    this.localFolder.connectToServer(this.ipAddress);
+                this.sharedFolder.sendFile(file);
                 this.localFolder.downLoadFile(file);
                 if (this.localFolder.checkForChange())
                     clientTable.getItems().add(file);

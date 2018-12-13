@@ -1,6 +1,7 @@
 package classes;
 
 import interfaces.Viewer;
+import jdk.net.SocketFlow;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -18,11 +19,12 @@ public class Monitor implements Viewer, Runnable {
     private static ArrayList<FileInfo> names;
     private static boolean isChanged;
 
-    private static ServerSocket serverSocket;
-    private Socket socket;
+
+    private Socket clientSocket;
     public static int SOCKET_PORT_NO = 1234;
+    private static ServerSocket serverSocket;
     private OutputStream out;
-    private InputStream in;
+    private BufferedReader in;
     private String filePath;
     private FileInfo fileInfo;
     //---------------------------
@@ -34,16 +36,15 @@ public class Monitor implements Viewer, Runnable {
             instance = new Monitor();
             folder = new File(FOLDER_PATH);
             names = new ArrayList<>();
-            try {
-                serverSocket = new ServerSocket(SOCKET_PORT_NO);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-//            serverSocket = new ServerSocket(SOCKET_PORT_NO);
             if (!folder.exists()) {
                 folder.mkdir();
             }else{
                 populateArray();
+            }
+            try {
+                serverSocket = new ServerSocket(SOCKET_PORT_NO);
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
         return instance;
@@ -111,79 +112,101 @@ public class Monitor implements Viewer, Runnable {
     @Override
     public void run() {
 
-//        if(fileInfo != null) {
-//            try {
-//                socket = serverSocket.accept();
-//                System.out.println("receiveFile() running");
-//                String fileName = fileInfo.getName() + "." + fileInfo.getType();
-//                in = socket.getInputStream();
-//                out = new FileOutputStream(FOLDER_PATH + File.separator + fileName);
-//                byte[] bytes = new byte[8192];
-//
-//                System.out.println("START WHILE LOOP");
-//                int count;
-//                while ((count = in.read(bytes)) > 0) {
-//                    System.out.println("INSIDE WHILE LOOP");
-//                    out.write(bytes, 0, count);
-//                }
-//
-//                System.out.println("END WHILE LOOP");
-//                System.out.println("receiveFile() stopped");
-//                out.close();
-//                in.close();
-//                socket.close();
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }
         watchDirectory();
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+//        try {
+//            Thread.sleep(5000);
+//        } catch (InterruptedException e) {
+//            e.printStackTrace();
+//        }
     }
 
     //---------------------------
     //      EXTRA FUNCTIONALITY
     //---------------------------
-    public void sendFile() {
+    public void sendFile(FileInfo file) {
         try {
-//            serverSocket = new ServerSocket(SOCKET_PORT_NO);
-            socket = serverSocket.accept();
-            in = socket.getInputStream();
-            out = new FileOutputStream(filePath);
-
-            byte[] bytes = new byte[8192];
-            int count;
-
-            while ((count = in.read(bytes)) > 0) {
-                out.write(bytes, 0, count);
+            if(serverSocket.isClosed() || serverSocket == null) {
+                serverSocket = new ServerSocket(SOCKET_PORT_NO);
             }
+            System.out.println("new server socket: " + serverSocket.toString());
+            clientSocket = serverSocket.accept();
+            System.out.println("Sending to client...");
+            //handle file read
+            System.out.println("SendFile(): "+file.getAbsolutePath());
+            File myFile = new File(file.getAbsolutePath());
+//            byte[] bytes;
+            if(myFile.length() > Integer.MAX_VALUE){
+                System.out.println("File too large");
+                System.exit(0);
+            }
+            byte[] bytes = new byte[(int) myFile.length()];
 
-            out.close();
-            in.close();
-            socket.close();
-//            serverSocket.close();
-        } catch (IOException e) {
+            FileInputStream fis = new FileInputStream(myFile);
+            BufferedInputStream bis = new BufferedInputStream(fis);
+            //bis.read(bytes, 0, bytes.length);
+
+            DataInputStream dis = new DataInputStream(bis);
+            dis.readFully(bytes, 0, bytes.length);
+
+            //handle file send over socket
+            OutputStream os = clientSocket.getOutputStream();
+
+            //Sending file name and file size to the server
+            DataOutputStream dos = new DataOutputStream(os);
+            dos.writeUTF(myFile.getName());
+            dos.writeLong(bytes.length);
+            dos.write(bytes, 0, bytes.length);
+            dos.flush();
+            clientSocket.close();
+            serverSocket.close();
+            System.out.println("File "+file.getName()+" sent to client.");
+        } catch (Exception e) {
+            System.err.println("sendFile(): File does not exist!");
             e.printStackTrace();
+            System.exit(0);
         }
     }
 
-    public Data receiveFile(FileInfo fileInfo){
-            int current = 0;
-            try {
-                in = new FileInputStream(fileInfo.getAbsolutePath());
-                byte[] bytes = new byte[in.available()];
-                Data data = new Data();
-                data.setName(fileInfo.getName());
-                data.setFile(bytes);
-                in.close();
-                return data;
-            } catch (IOException e) {
+    public void receiveFile(FileInfo fileInfo){
+        if(fileInfo != null && !this.fileExists(fileInfo)) {
+            new Thread(() -> {try {
+                if(serverSocket == null || serverSocket.isClosed()) {
+                    serverSocket = new ServerSocket(SOCKET_PORT_NO);
+                }
+                if(clientSocket == null || clientSocket.isClosed())
+                    clientSocket = serverSocket.accept();
+                System.out.println("Server Receiving...");
+                int bytes;
+                DataInputStream clientData = new DataInputStream(clientSocket.getInputStream());
+
+                String fileName = clientData.readUTF();
+                System.out.println("File Path: " + fileName);
+                OutputStream output = new FileOutputStream(FOLDER_PATH + File.separator + fileName);
+                long size = clientData.readLong();
+                byte[] buffer = new byte[1024];
+                while (size > 0 && (bytes = clientData.read(buffer, 0, (int) Math.min(buffer.length, size))) != -1) {
+                    System.out.println("INSIDE while Loop");
+                    output.write(buffer, 0, bytes);
+                    size -= bytes;
+                }
+                System.out.println("EXIT while Loop");
+                output.close();
+                clientData.close();
+
+                System.out.println("File " + fileInfo.getAbsolutePath() + " received from Client.");
+                System.out.println("Receiving Finished");
+                clientSocket.close();
+                Thread.sleep(2000);
+//                serverSocket.close();
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            } catch (InterruptedException e) {
+                System.out.println("Receive file: Interrupted Threads");
                 e.printStackTrace();
             }
+            }).start();
 
+        }
     }
 
     private static void populateArray() {
@@ -249,4 +272,5 @@ public class Monitor implements Viewer, Runnable {
             System.out.println("IOException: --> Class: Monitor --> Method: watchDirectory()");
         }
     }
+
 }
