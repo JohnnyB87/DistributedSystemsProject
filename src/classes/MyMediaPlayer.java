@@ -114,22 +114,20 @@ public class MyMediaPlayer implements Runnable{
     public void uploadFile(FileInfo file){
 
         if(file != null && !MONITOR.fileExists(file)) {
-            if(connectToServer.isClosed()){
-                try {
-                    connectToServer = new Socket(this.ipAddress, SOCKET_PORT_NO);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-            System.out.println("UPLOAD STARTED");
-            File f = new File(file.getAbsolutePath());
-            MONITOR.setFileInfo(FileInfo.createFileInfo(f.getPath(), f.getName()));
-
             new Thread(() -> {
                 try{
+                    if(connectToServer.isClosed()){
+                        try {
+                            connectToServer = new Socket(this.ipAddress, SOCKET_PORT_NO);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    System.out.println("UPLOAD STARTED");
                     //handle file read
                     System.out.println(file.getAbsolutePath());
                     File myFile = new File(file.getAbsolutePath());
+                    MONITOR.setFileInfo(FileInfo.createFileInfo(myFile.getPath(), myFile.getName()));
                     byte[] bytes = new byte[(int) myFile.length()];
 
                     System.out.println("byte[] created");

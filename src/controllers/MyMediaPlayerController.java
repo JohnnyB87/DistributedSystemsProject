@@ -203,7 +203,7 @@ public class MyMediaPlayerController {
             this.serverIsSelected = true;
             this.uploadButton.setDisable(true);
             if(this.localFolder.getLocalFolder() != null) {
-                if (this.localFolder.fileExists(newSelection)) {
+                if (newSelection != null && this.localFolder.fileExists(newSelection)) {
                     this.playButton.setDisable(false);
                     this.downloadButton.setDisable(true);
                 }
