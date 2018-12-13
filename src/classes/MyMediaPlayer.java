@@ -165,36 +165,39 @@ public class MyMediaPlayer implements Runnable{
 
     public void downLoadFile(FileInfo file){
         if(file != null && !this.fileExists(file)) {
-            try {
-                System.out.println("Client Downloading...");
-                int bytesRead;
-                if(connectToServer.isClosed()){
-                    connectToServer = new Socket(this.ipAddress, SOCKET_PORT_NO);
+            new Thread(()->{
+                try {
+                    System.out.println("Client Downloading...");
+                    int bytesRead;
+                    if(connectToServer.isClosed()){
+                        connectToServer = new Socket(this.ipAddress, SOCKET_PORT_NO);
+                    }
+                    Thread.sleep(3000);
+                    DataInputStream clientData = new DataInputStream(connectToServer.getInputStream());
+
+                    String fileName = clientData.readUTF();
+                    System.out.println("File Path: " + fileName);
+                    OutputStream output = new FileOutputStream(folderPath + File.separator + fileName);
+                    long size = clientData.readLong();
+                    byte[] buffer = new byte[1024];
+                    while (size > 0 && (bytesRead = clientData.read(buffer, 0, (int) Math.min(buffer.length, size))) != -1) {
+                        output.write(buffer, 0, bytesRead);
+                        size -= bytesRead;
+                    }
+
+                    output.close();
+                    connectToServer.close();
+                    Thread.sleep(2000);
+                    System.out.println("File "+file.getName()+" received from Server.");
+                    System.out.println("Downloading Finished");
+                } catch (IOException ex) {
+                    ex.printStackTrace();
+                } catch (InterruptedException e) {
+                    System.out.println("downloadFile(): Thread.sleep()");
+                    e.printStackTrace();
                 }
-                Thread.sleep(3000);
-                DataInputStream clientData = new DataInputStream(connectToServer.getInputStream());
+            }).start();
 
-                String fileName = clientData.readUTF();
-                System.out.println("File Path: " + fileName);
-                OutputStream output = new FileOutputStream(folderPath + File.separator + fileName);
-                long size = clientData.readLong();
-                byte[] buffer = new byte[1024];
-                while (size > 0 && (bytesRead = clientData.read(buffer, 0, (int) Math.min(buffer.length, size))) != -1) {
-                    output.write(buffer, 0, bytesRead);
-                    size -= bytesRead;
-                }
-
-                output.close();
-                connectToServer.close();
-
-                System.out.println("File "+file.getName()+" received from Server.");
-                System.out.println("Downloading Finished");
-            } catch (IOException ex) {
-                ex.printStackTrace();
-            } catch (InterruptedException e) {
-                System.out.println("downloadFile(): Thread.sleep()");
-                e.printStackTrace();
-            }
         }
         else
             System.out.println("File already exists in this Folder.");

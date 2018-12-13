@@ -124,47 +124,51 @@ public class Monitor implements Viewer, Runnable {
     //      EXTRA FUNCTIONALITY
     //---------------------------
     public void sendFile(FileInfo file) {
-        try {
-            if(serverSocket.isClosed() || serverSocket == null) {
-                serverSocket = new ServerSocket(SOCKET_PORT_NO);
-            }
-            System.out.println("new server socket: " + serverSocket.toString());
-            clientSocket = serverSocket.accept();
-            System.out.println("Sending to client...");
-            //handle file read
-            System.out.println("SendFile(): "+file.getAbsolutePath());
-            File myFile = new File(file.getAbsolutePath());
+        new Thread(()->{
+            try {
+                if(serverSocket.isClosed() || serverSocket == null) {
+                    serverSocket = new ServerSocket(SOCKET_PORT_NO);
+                }
+                System.out.println("new server socket: " + serverSocket.toString());
+                clientSocket = serverSocket.accept();
+                System.out.println("Sending to client...");
+                //handle file read
+                System.out.println("SendFile(): "+file.getAbsolutePath());
+                File myFile = new File(file.getAbsolutePath());
 //            byte[] bytes;
-            if(myFile.length() > Integer.MAX_VALUE){
-                System.out.println("File too large");
+                if(myFile.length() > Integer.MAX_VALUE){
+                    System.out.println("File too large");
+                    System.exit(0);
+                }
+                byte[] bytes = new byte[(int) myFile.length()];
+
+                FileInputStream fis = new FileInputStream(myFile);
+                BufferedInputStream bis = new BufferedInputStream(fis);
+                //bis.read(bytes, 0, bytes.length);
+
+                DataInputStream dis = new DataInputStream(bis);
+                dis.readFully(bytes, 0, bytes.length);
+
+                //handle file send over socket
+                OutputStream os = clientSocket.getOutputStream();
+
+                //Sending file name and file size to the server
+                DataOutputStream dos = new DataOutputStream(os);
+                dos.writeUTF(myFile.getName());
+                dos.writeLong(bytes.length);
+                dos.write(bytes, 0, bytes.length);
+                dos.flush();
+                clientSocket.close();
+                serverSocket.close();
+                System.out.println("File "+file.getName()+" sent to client.");
+                Thread.sleep(2000);
+            } catch (Exception e) {
+                System.err.println("sendFile(): File does not exist!");
+                e.printStackTrace();
                 System.exit(0);
             }
-            byte[] bytes = new byte[(int) myFile.length()];
+        }).start();
 
-            FileInputStream fis = new FileInputStream(myFile);
-            BufferedInputStream bis = new BufferedInputStream(fis);
-            //bis.read(bytes, 0, bytes.length);
-
-            DataInputStream dis = new DataInputStream(bis);
-            dis.readFully(bytes, 0, bytes.length);
-
-            //handle file send over socket
-            OutputStream os = clientSocket.getOutputStream();
-
-            //Sending file name and file size to the server
-            DataOutputStream dos = new DataOutputStream(os);
-            dos.writeUTF(myFile.getName());
-            dos.writeLong(bytes.length);
-            dos.write(bytes, 0, bytes.length);
-            dos.flush();
-            clientSocket.close();
-            serverSocket.close();
-            System.out.println("File "+file.getName()+" sent to client.");
-        } catch (Exception e) {
-            System.err.println("sendFile(): File does not exist!");
-            e.printStackTrace();
-            System.exit(0);
-        }
     }
 
     public void receiveFile(FileInfo fileInfo){
@@ -196,8 +200,8 @@ public class Monitor implements Viewer, Runnable {
                 System.out.println("File " + fileInfo.getAbsolutePath() + " received from Client.");
                 System.out.println("Receiving Finished");
                 clientSocket.close();
+                //                serverSocket.close();
                 Thread.sleep(2000);
-//                serverSocket.close();
             } catch (IOException ex) {
                 ex.printStackTrace();
             } catch (InterruptedException e) {
