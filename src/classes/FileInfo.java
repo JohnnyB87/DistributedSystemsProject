@@ -20,7 +20,7 @@ public class FileInfo implements Comparable<FileInfo>{
         this.name = name;
         this.type = type;
         this.size = size;
-        this.absolutePath = setAbsolutePath();
+        setAbsolutePath();
     }
 
     //---------------------------
@@ -53,6 +53,7 @@ public class FileInfo implements Comparable<FileInfo>{
 
     public void setLocation(String location) {
         this.location = location;
+        setAbsolutePath();
     }
 
     public void setName(String name) {
@@ -67,10 +68,13 @@ public class FileInfo implements Comparable<FileInfo>{
         this.size = size;
     }
 
-    private String setAbsolutePath(){
-        return this.location + File.separator + this.name + "." + this.type;
+    private void setAbsolutePath(){
+        this.absolutePath = this.location + File.separator + this.name + "." + this.type;
     }
 
+    //---------------------------
+    //      EXTRA FUNCTIONALITY
+    //---------------------------
     @Override
     public int compareTo(FileInfo file) {
         return this.name.equalsIgnoreCase(file.name) && this.type.equalsIgnoreCase(file.getType())? 0 :
@@ -87,6 +91,7 @@ public class FileInfo implements Comparable<FileInfo>{
         file.setName(fileName.substring(0, fileName.lastIndexOf(".")));
         file.setType(fileName.substring(fileName.lastIndexOf(".") + 1));
         file.setLocation(path);
+        file.setAbsolutePath();
         file.setSize((int)f.length());
 
         return file;

@@ -1,4 +1,8 @@
 package classes;
+/**
+ * Custom class that creates a 3 columned table with specific column names
+ * Table is used to display file information
+ */
 
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;

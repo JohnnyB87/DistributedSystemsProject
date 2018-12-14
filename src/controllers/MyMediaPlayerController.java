@@ -16,6 +16,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 public class MyMediaPlayerController {
@@ -145,6 +146,11 @@ public class MyMediaPlayerController {
     }
 
     public void uploadButtonPressed() {
+//        Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
+//        for ( Thread t : threadSet){
+//            System.out.println("Thread :"+t+":"+"state:"+t.getState());
+//        }
+
         System.out.println(this.localFolder);
         if(this.localFolder.getLocalFolder() != null){
             int selected = this.clientTable.getSelectionModel().getSelectedIndex();
@@ -152,10 +158,18 @@ public class MyMediaPlayerController {
             if (selected > -1) {
                 System.out.println("Index: " + this.clientTable.getSelectionModel().getFocusedIndex());
                 FileInfo file = this.clientTable.getSelectionModel().getSelectedItems().get(0);
-                this.localFolder.uploadFile(file);
-                this.sharedFolder.receiveFile(file);
-                if(this.sharedFolder.checkForChange())
-                    serverTable.getItems().add(file);
+                new Thread(()->{
+                    this.localFolder.uploadFile(file);
+                    this.sharedFolder.receiveFile(file);
+                    System.out.println("FOLDER CHANGED: " + this.sharedFolder.checkForChange());
+                    if(this.sharedFolder.checkForChange())
+                        serverTable.getItems().add(file);
+                    try {
+                        Thread.sleep(5000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }).start();
             } else {
                 System.out.println("Select item to upload");
                 new Alert(Alert.AlertType.ERROR, "No file selected").show();
@@ -174,10 +188,17 @@ public class MyMediaPlayerController {
                 FileInfo file = this.serverTable.getSelectionModel().getSelectedItems().get(0);
 //                if(this.localFolder.getConnectToServer().isClosed())
 //                    this.localFolder.connectToServer(this.ipAddress);
-                this.sharedFolder.sendFile(file);
-                this.localFolder.downLoadFile(file);
-                if (this.localFolder.checkForChange())
-                    clientTable.getItems().add(file);
+                new Thread(()->{
+                    this.sharedFolder.sendFile(file);
+                    this.localFolder.downLoadFile(file);
+                    if (this.localFolder.checkForChange())
+                        clientTable.getItems().add(file);
+                    try {
+                        Thread.sleep(5000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }).start();
             } else {
                 System.out.println("Select item to download");
                 alert = new Alert(Alert.AlertType.ERROR, "No file selected");
