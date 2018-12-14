@@ -73,7 +73,7 @@ public class Monitor implements Viewer, Runnable {
     }
 
     @Override
-    public boolean openFile(String name){
+    public boolean openFile(String name) {
         try {
             if (names != null) {
                 for (FileInfo fileName : names)
@@ -119,7 +119,7 @@ public class Monitor implements Viewer, Runnable {
      * @param file Takes in a FileInfo parameter of the file to be sent
      */
     public void sendFile(FileInfo file) {
-//        new Thread(()->{
+        new Thread(()->{
             try {
                 // check if the server socket is exists
                 if(serverSocket.isClosed() || serverSocket == null) {
@@ -170,13 +170,13 @@ public class Monitor implements Viewer, Runnable {
                 serverSocket.close();
                 System.out.println("File "+file.getName()+" sent to client.");
                 // get thread to sleep for 2 seconds
-//                Thread.sleep(2000);
+                Thread.sleep(2000);
             } catch (Exception e) {
                 System.err.println("sendFile(): File does not exist!");
                 e.printStackTrace();
                 System.exit(0);
             }
-//        }).start();
+        }).start();
 
     }
 
@@ -188,7 +188,7 @@ public class Monitor implements Viewer, Runnable {
     public void receiveFile(FileInfo fileInfo){
         // check if the file is not null and if the server already has it
         if(fileInfo != null && !this.fileExists(fileInfo)) {
-//            new Thread(() -> {
+            new Thread(() -> {
             try {
                 // check if sockets exist or are open
                 if(serverSocket == null || serverSocket.isClosed()) {
@@ -223,15 +223,15 @@ public class Monitor implements Viewer, Runnable {
                 System.out.println("Receiving Finished");
                 clientSocket.close();
                 //                serverSocket.close();
-//                Thread.sleep(2000);
+                Thread.sleep(2000);
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
-//            catch (InterruptedException e) {
-//                System.out.println("Receive file: Interrupted Threads");
-//                e.printStackTrace();
-//            }
-//            }).start();
+            catch (InterruptedException e) {
+                System.out.println("Receive file: Interrupted Threads");
+                e.printStackTrace();
+            }
+            }).start();
 
         }
     }

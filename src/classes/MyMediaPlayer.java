@@ -114,7 +114,7 @@ public class MyMediaPlayer implements Runnable{
     public void uploadFile(FileInfo file){
 
         if(file != null && !MONITOR.fileExists(file)) {
-//            new Thread(() -> {
+            new Thread(() -> {
                 try{
                     if(connectToServer.isClosed()){
                         try {
@@ -149,12 +149,12 @@ public class MyMediaPlayer implements Runnable{
                     dos.flush();
                     connectToServer.close();
                     System.out.println("File "+file.getName()+" sent to client.");
-//                    Thread.sleep(2000);
+                    Thread.sleep(2000);
                 } catch (Exception e) {
                     System.err.println("File does not exist!");
                     e.printStackTrace();
                 }
-//            }).start();
+            }).start();
 
         }
         else
@@ -163,7 +163,7 @@ public class MyMediaPlayer implements Runnable{
 
     public void downLoadFile(FileInfo file){
         if(file != null && !this.fileExists(file)) {
-//            new Thread(()->{
+            new Thread(()->{
                 try {
                     System.out.println("Client Downloading...");
                     int bytesRead;
@@ -185,7 +185,7 @@ public class MyMediaPlayer implements Runnable{
 
                     output.close();
                     connectToServer.close();
-//                    Thread.sleep(2000);
+                    Thread.sleep(2000);
                     System.out.println("File "+file.getName()+" received from Server.");
                     System.out.println("Downloading Finished");
                 } catch (IOException ex) {
@@ -194,7 +194,7 @@ public class MyMediaPlayer implements Runnable{
                     System.out.println("downloadFile(): Thread.sleep()");
                     e.printStackTrace();
                 }
-//            }).start();
+            }).start();
 
         }
         else

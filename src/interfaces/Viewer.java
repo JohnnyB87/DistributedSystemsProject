@@ -8,5 +8,4 @@ public interface Viewer {
     boolean openFile(String name);// opens a file called name
     boolean checkForChange();// sets a bool if a file has been added
 
-
 }

@@ -50,7 +50,6 @@ public class MyMediaPlayerController {
     private OutputStream out;
     private InputStream in;
     private String filePath;
-    private String ipAddress;
 
 
     @FXML
@@ -73,7 +72,6 @@ public class MyMediaPlayerController {
         boolean isValidIpAddress = validateIpAddress(ipAddress.trim());
         if(isValidIpAddress){
             if(localFolder.connectToServer(ipAddress)) {
-                this.ipAddress = ipAddress;
                 serverTable.getItems().addAll(this.sharedFolder.getNames());
             }
             else
@@ -81,18 +79,6 @@ public class MyMediaPlayerController {
         }else{
             new Alert(Alert.AlertType.ERROR, "Invalid Ip Address Entered").show();
         }
-    }
-
-    private void startServer(){
-        new Thread(() -> {
-            try {
-                serverSocket = new ServerSocket(SOCKET_PORT_NO);
-                socket = serverSocket.accept();
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }).start();
     }
 
     public void quitButtonPressed() {
@@ -158,7 +144,6 @@ public class MyMediaPlayerController {
             if (selected > -1) {
                 System.out.println("Index: " + this.clientTable.getSelectionModel().getFocusedIndex());
                 FileInfo file = this.clientTable.getSelectionModel().getSelectedItems().get(0);
-                new Thread(()->{
                     this.localFolder.uploadFile(file);
                     this.sharedFolder.receiveFile(file);
                     System.out.println("FOLDER CHANGED: " + this.sharedFolder.checkForChange());
@@ -169,7 +154,6 @@ public class MyMediaPlayerController {
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                }).start();
             } else {
                 System.out.println("Select item to upload");
                 new Alert(Alert.AlertType.ERROR, "No file selected").show();
@@ -188,7 +172,6 @@ public class MyMediaPlayerController {
                 FileInfo file = this.serverTable.getSelectionModel().getSelectedItems().get(0);
 //                if(this.localFolder.getConnectToServer().isClosed())
 //                    this.localFolder.connectToServer(this.ipAddress);
-                new Thread(()->{
                     this.sharedFolder.sendFile(file);
                     this.localFolder.downLoadFile(file);
                     if (this.localFolder.checkForChange())
@@ -198,7 +181,6 @@ public class MyMediaPlayerController {
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
-                }).start();
             } else {
                 System.out.println("Select item to download");
                 alert = new Alert(Alert.AlertType.ERROR, "No file selected");
