@@ -22,9 +22,6 @@ public class Monitor implements Viewer, Runnable {
     private static ArrayList<FileInfo> names;
     private static boolean isChanged;
 
-    private Socket clientSocket;
-    private static int SOCKET_PORT_NO = 1234;
-    private static ServerSocket serverSocket;
     private FileInfo fileInfo;
     //---------------------------
     //      CONSTRUCTORS
@@ -40,11 +37,6 @@ public class Monitor implements Viewer, Runnable {
             }else{
                 populateArray();
             }
-            try {
-                serverSocket = new ServerSocket(SOCKET_PORT_NO);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
         return instance;
     }
@@ -58,6 +50,10 @@ public class Monitor implements Viewer, Runnable {
 
     public File getFolder() {
         return folder;
+    }
+
+    public FileInfo getFileInfo() {
+        return fileInfo;
     }
 
     public void setFileInfo(FileInfo fileInfo) {
@@ -115,30 +111,14 @@ public class Monitor implements Viewer, Runnable {
 
     /**
      * Method used for sending a file from the server to the client
-     *
-     * @param file Takes in a FileInfo parameter of the file to be sent
      */
-    public void sendFile(FileInfo file) {
-        new Thread(()->{
+    public void sendFile(FileInfo fileInfo, Socket clientSocket) {
             try {
-                // check if the server socket is exists
-                if(serverSocket.isClosed() || serverSocket == null) {
-                    // if not create a new server socket
-                    serverSocket = new ServerSocket(SOCKET_PORT_NO);
-                }
-                System.out.println("new server socket: " + serverSocket.toString());
-                // get the clients socket
-                clientSocket = serverSocket.accept();
-                System.out.println("Sending to client...");
+                System.out.println("Server side sending data");
                 //handle file read
-                System.out.println("SendFile(): "+file.getAbsolutePath());
                 // create a new FILE OBJECT  to be sent over the stream
-                File myFile = new File(file.getAbsolutePath());
-//            byte[] bytes;
-//                if(myFile.length() > Integer.MAX_VALUE){
-//                    System.out.println("File too large");
-//                    System.exit(0);
-//                }
+                String fileName = fileInfo.getName() + "." + fileInfo.getType();
+                File myFile = new File(FOLDER_PATH + File.separator + fileName);
                 // crate empty byte array the size of the file
                 byte[] bytes = new byte[(int) myFile.length()];
 
@@ -158,6 +138,7 @@ public class Monitor implements Viewer, Runnable {
                 //Sending file name and file size to the server
                 // using a data output stream
                 DataOutputStream dos = new DataOutputStream(os);
+//                dos.writeInt(1);
                 // write the UTF to the output stream
                 dos.writeUTF(myFile.getName());
                 // give the output stream the length of the byte array
@@ -166,46 +147,31 @@ public class Monitor implements Viewer, Runnable {
                 dos.write(bytes, 0, bytes.length);
                 // flush output stream and close sockets
                 dos.flush();
-                clientSocket.close();
-                serverSocket.close();
-                System.out.println("File "+file.getName()+" sent to client.");
-                // get thread to sleep for 2 seconds
-                Thread.sleep(2000);
+                System.out.println("Data sent");
             } catch (Exception e) {
                 System.err.println("sendFile(): File does not exist!");
                 e.printStackTrace();
                 System.exit(0);
             }
-        }).start();
 
     }
 
     /**
      * Method used for receiving a file from the client
      *
-     * @param fileInfo Takes in a FileInfo parameter of the file to be sent
      */
-    public void receiveFile(FileInfo fileInfo){
+    public void receiveFile(Socket clientSocket){
         // check if the file is not null and if the server already has it
         if(fileInfo != null && !this.fileExists(fileInfo)) {
-            new Thread(() -> {
             try {
-                // check if sockets exist or are open
-                if(serverSocket == null || serverSocket.isClosed()) {
-                    serverSocket = new ServerSocket(SOCKET_PORT_NO);
-                }
-                if(clientSocket == null || clientSocket.isClosed())
-                    clientSocket = serverSocket.accept();
-                System.out.println("Server Receiving...");
                 int bytes;
                 // create a new data input stream using the clients socket
                 DataInputStream clientData = new DataInputStream(clientSocket.getInputStream());
-
                 // read the UTF from the clients socket using the input stream
                 String fileName = clientData.readUTF();
-                System.out.println("File Path: " + fileName);
                 // create a new output stream
                 OutputStream output = new FileOutputStream(new File(FOLDER_PATH + File.separator + fileName));
+
                 long size = clientData.readLong();
                 byte[] buffer = new byte[1024];
                 while (size > 0 && (bytes = clientData.read(buffer, 0, (int) Math.min(buffer.length, size))) != -1) {
@@ -214,24 +180,13 @@ public class Monitor implements Viewer, Runnable {
                 }
 
                 output.close();
-                clientData.close();
 
                 FileInfo fi = FileInfo.createFileInfo(FOLDER_PATH, fileInfo.getName()+"."+fileInfo.getType());
                 this.addFile(fi);
-                System.out.println("File " + fileInfo.getAbsolutePath() + " received from Client.");
-                System.out.println("File " + fi.getAbsolutePath() + " saved to server.");
-                System.out.println("Receiving Finished");
-                clientSocket.close();
                 //                serverSocket.close();
-                Thread.sleep(2000);
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
-            catch (InterruptedException e) {
-                System.out.println("Receive file: Interrupted Threads");
-                e.printStackTrace();
-            }
-            }).start();
 
         }
     }

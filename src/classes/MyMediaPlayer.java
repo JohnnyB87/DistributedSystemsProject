@@ -20,10 +20,10 @@ public class MyMediaPlayer implements Runnable{
     private ArrayList<FileInfo> fileInfo;
     private boolean isChanged;
     private String folderPath;
-    private Socket connectToServer;
+    private Socket connectToServerSocket;
     private static int SOCKET_PORT_NO = 1234;
-    private ObjectOutputStream out;
-    private BufferedReader in;
+    private DataOutputStream out;
+    private DataInputStream in;
     private String ipAddress;
 
     //--------------------------------
@@ -114,17 +114,8 @@ public class MyMediaPlayer implements Runnable{
     public void uploadFile(FileInfo file){
 
         if(file != null && !MONITOR.fileExists(file)) {
-            new Thread(() -> {
                 try{
-                    if(connectToServer.isClosed()){
-                        try {
-                            connectToServer = new Socket(this.ipAddress, SOCKET_PORT_NO);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
                     System.out.println("UPLOAD STARTED");
-                    //handle file read
                     System.out.println(file.getAbsolutePath());
                     File myFile = new File(file.getAbsolutePath());
                     MONITOR.setFileInfo(FileInfo.createFileInfo(MONITOR.getFolderPath(), myFile.getName()));
@@ -139,22 +130,18 @@ public class MyMediaPlayer implements Runnable{
                     DataInputStream dis = new DataInputStream(bis);
                     dis.readFully(bytes, 0, bytes.length);
                     //handle file send over socket
-                    OutputStream os = connectToServer.getOutputStream();
 
-                    //Sending file name and file size to the server
-                    DataOutputStream dos = new DataOutputStream(os);
-                    dos.writeUTF(myFile.getName());
-                    dos.writeLong(bytes.length);
-                    dos.write(bytes, 0, bytes.length);
-                    dos.flush();
-                    connectToServer.close();
+                    out.writeInt(0);
+                    out.writeUTF(myFile.getName());
+                    out.writeLong(bytes.length);
+                    out.write(bytes, 0, bytes.length);
+                    out.flush();
+
                     System.out.println("File "+file.getName()+" sent to client.");
-                    Thread.sleep(2000);
                 } catch (Exception e) {
                     System.err.println("File does not exist!");
                     e.printStackTrace();
                 }
-            }).start();
 
         }
         else
@@ -162,39 +149,29 @@ public class MyMediaPlayer implements Runnable{
     }
 
     public void downLoadFile(FileInfo file){
+        System.out.println("Inside downloadFile()");
         if(file != null && !this.fileExists(file)) {
-            new Thread(()->{
+            System.out.println("File not null");
                 try {
                     System.out.println("Client Downloading...");
                     int bytesRead;
-                    if(connectToServer.isClosed()){
-                        connectToServer = new Socket(this.ipAddress, SOCKET_PORT_NO);
-                    }
-                    Thread.sleep(3000);
-                    DataInputStream clientData = new DataInputStream(connectToServer.getInputStream());
-
-                    String fileName = clientData.readUTF();
+                    out.writeInt(1);
+                    String fileName = in.readUTF();
                     System.out.println("File Path: " + fileName);
                     OutputStream output = new FileOutputStream(folderPath + File.separator + fileName);
-                    long size = clientData.readLong();
+                    long size = in.readLong();
                     byte[] buffer = new byte[1024];
-                    while (size > 0 && (bytesRead = clientData.read(buffer, 0, (int) Math.min(buffer.length, size))) != -1) {
+                    while (size > 0 && (bytesRead = in.read(buffer, 0, (int) Math.min(buffer.length, size))) != -1) {
                         output.write(buffer, 0, bytesRead);
                         size -= bytesRead;
                     }
 
                     output.close();
-                    connectToServer.close();
-                    Thread.sleep(2000);
                     System.out.println("File "+file.getName()+" received from Server.");
                     System.out.println("Downloading Finished");
                 } catch (IOException ex) {
                     ex.printStackTrace();
-                } catch (InterruptedException e) {
-                    System.out.println("downloadFile(): Thread.sleep()");
-                    e.printStackTrace();
                 }
-            }).start();
 
         }
         else
@@ -260,7 +237,9 @@ public class MyMediaPlayer implements Runnable{
     public boolean connectToServer(String ipAddress){
         try {
             this.ipAddress = ipAddress;
-            connectToServer = new Socket(this.ipAddress, SOCKET_PORT_NO);
+            connectToServerSocket = new Socket(this.ipAddress, SOCKET_PORT_NO);
+            in = new DataInputStream(connectToServerSocket.getInputStream());
+            out = new DataOutputStream(connectToServerSocket.getOutputStream());
             System.out.println("Connection Success");
             return true;
         }catch(IOException e){

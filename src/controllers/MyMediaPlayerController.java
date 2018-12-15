@@ -40,6 +40,7 @@ public class MyMediaPlayerController {
     private boolean serverIsSelected = false;
     private Thread sharedThread;
     private Thread localThread;
+    private Thread serverThread;
     private static final Pattern PATTERN = Pattern.compile(
             "^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");
 
@@ -47,9 +48,10 @@ public class MyMediaPlayerController {
     private ServerSocket serverSocket;
     private Socket socket;
     private static final int SOCKET_PORT_NO = 1234;
-    private OutputStream out;
-    private InputStream in;
+    private DataOutputStream out;
+    private DataInputStream in;
     private String filePath;
+    private FileInfo fileInfoGlobal;
 
 
     @FXML
@@ -61,9 +63,47 @@ public class MyMediaPlayerController {
 
         clientTableSelected();
         serverTableSelected();
+        startServer();
 
         sharedThread = new Thread(this.sharedFolder);
         sharedThread.start();
+    }
+
+    private void startServer(){
+        new Thread(()->{
+            try {
+                System.out.println("Server started");
+                serverSocket = new ServerSocket(SOCKET_PORT_NO);
+                System.out.println("Waiting for connection");
+                socket = serverSocket.accept();
+                System.out.println("Successful connection");
+                in = new DataInputStream(socket.getInputStream());
+                out = new DataOutputStream(socket.getOutputStream());
+
+                while(true){
+                    int actionCode = in.readInt();
+                    System.out.println(actionCode);
+                    switch (actionCode){
+                        case 0:
+                            sharedFolder.receiveFile(socket);
+                            break;
+                        case 1:
+                            System.out.println("Downloading data...");
+                            sharedFolder.sendFile(fileInfoGlobal, socket);
+                            break;
+                        default:
+                            break;
+                    }
+                    Thread.sleep(3000);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (InterruptedException e) {
+                System.out.println("Server Thread interrupted.");
+                e.printStackTrace();
+            }
+
+        }).start();
     }
 
     public void connectButtonPressed() {
@@ -132,28 +172,17 @@ public class MyMediaPlayerController {
     }
 
     public void uploadButtonPressed() {
-//        Set<Thread> threadSet = Thread.getAllStackTraces().keySet();
-//        for ( Thread t : threadSet){
-//            System.out.println("Thread :"+t+":"+"state:"+t.getState());
-//        }
-
         System.out.println(this.localFolder);
         if(this.localFolder.getLocalFolder() != null){
             int selected = this.clientTable.getSelectionModel().getSelectedIndex();
             System.out.println("Index: " + selected);
             if (selected > -1) {
                 System.out.println("Index: " + this.clientTable.getSelectionModel().getFocusedIndex());
-                FileInfo file = this.clientTable.getSelectionModel().getSelectedItems().get(0);
-                    this.localFolder.uploadFile(file);
-                    this.sharedFolder.receiveFile(file);
+                FileInfo fileInfo = this.clientTable.getSelectionModel().getSelectedItems().get(0);
+                    this.localFolder.uploadFile(fileInfo);
                     System.out.println("FOLDER CHANGED: " + this.sharedFolder.checkForChange());
                     if(this.sharedFolder.checkForChange())
-                        serverTable.getItems().add(file);
-                    try {
-                        Thread.sleep(5000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+                        serverTable.getItems().add(fileInfo);
             } else {
                 System.out.println("Select item to upload");
                 new Alert(Alert.AlertType.ERROR, "No file selected").show();
@@ -169,18 +198,11 @@ public class MyMediaPlayerController {
             int selected = this.serverTable.getSelectionModel().getSelectedIndex();
             System.out.println("Index: " + selected);
             if (selected > -1) {
-                FileInfo file = this.serverTable.getSelectionModel().getSelectedItems().get(0);
-//                if(this.localFolder.getConnectToServer().isClosed())
-//                    this.localFolder.connectToServer(this.ipAddress);
-                    this.sharedFolder.sendFile(file);
-                    this.localFolder.downLoadFile(file);
-                    if (this.localFolder.checkForChange())
-                        clientTable.getItems().add(file);
-                    try {
-                        Thread.sleep(5000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+                fileInfoGlobal = this.serverTable.getSelectionModel().getSelectedItems().get(0);
+
+                this.localFolder.downLoadFile(fileInfoGlobal);
+                if (this.localFolder.checkForChange())
+                        clientTable.getItems().add(fileInfoGlobal);
             } else {
                 System.out.println("Select item to download");
                 alert = new Alert(Alert.AlertType.ERROR, "No file selected");
