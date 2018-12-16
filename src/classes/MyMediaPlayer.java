@@ -18,7 +18,7 @@ public class MyMediaPlayer implements Runnable, Viewer {
     //--------------------------------
     private final Monitor MONITOR;
     private File localFolder;
-    private ArrayList<FileInfo> fileInfo;
+    private ArrayList<FileInfo> names;
     private boolean isChanged;
     private String folderPath;
     private static int SOCKET_PORT_NO = 1234;
@@ -51,27 +51,30 @@ public class MyMediaPlayer implements Runnable, Viewer {
         this.localFolder = localFolder;
     }
 
-    public void setFileInfo(ArrayList<FileInfo> fileInfo) {
-        this.fileInfo = fileInfo;
+    public void setFileInfo(ArrayList<FileInfo> names) {
+        this.names = names;
     }
 
     //--------------------------------
     //      IMPLEMENTED METHODS
     //--------------------------------
+
+    /**
+     * Thread that monitors the associated directory for changes
+     */
     @Override
     public void run() {
-
         watchDirectory();
-//        try {
-//            Thread.sleep(5000);
-//        } catch (InterruptedException e) {
-//            e.printStackTrace();
-//        }
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public ArrayList<FileInfo> getNames() {
-        return fileInfo;
+        return names;
     }
 
     @Override
@@ -89,7 +92,7 @@ public class MyMediaPlayer implements Runnable, Viewer {
     public void folderItemsToArrayList() {
         String path = this.localFolder.getAbsolutePath();
         String[] array = this.localFolder.list();
-        fileInfo = new ArrayList<>();
+        names = new ArrayList<>();
 
         if (array != null) {
             for (String s : array) {
@@ -99,8 +102,7 @@ public class MyMediaPlayer implements Runnable, Viewer {
                 String fileType = s.substring(s.lastIndexOf(".") + 1);
 
                 FileInfo fileInfo = new FileInfo(path, fileName, fileType, (int)file.length() );
-                this.fileInfo.add(fileInfo);
-
+                this.names.add(fileInfo);
             }
         }
     }
@@ -172,11 +174,11 @@ public class MyMediaPlayer implements Runnable, Viewer {
     }
 
     private void addFile(FileInfo file) {
-        this.fileInfo.add(file);
+        this.names.add(file);
     }
 
     public boolean fileExists(FileInfo file){
-        for(FileInfo f : this.fileInfo){
+        for(FileInfo f : this.names){
             if(file.compareTo(f) == 0)
                 return true;
         }
@@ -213,9 +215,9 @@ public class MyMediaPlayer implements Runnable, Viewer {
             } while (key.reset());
         }catch(InterruptedException ie){
             Thread.currentThread().interrupt();
-            System.out.println("InterruptedException: --> Class: Monitor --> watchDirectory()");
+            System.out.println("InterruptedException: --> Class: MyMediaPlayer --> watchDirectory()");
         }catch (IOException ioe) {
-            System.out.println("IOException: --> Class: Monitor --> Method: watchDirectory()");
+            System.out.println("IOException: --> Class: MyMediaPlayer --> Method: watchDirectory()");
         }
     }
 

@@ -30,23 +30,23 @@ public class MyMediaPlayerController {
     //-----------------------------
     //      GUI ATTRIBUTES
     //-----------------------------
-    private AnchorPane anchorPane;
-    @FXML private Button selectButton;
     @FXML private MediaPlayerTableView<FileInfo> clientTable;
     @FXML private MediaPlayerTableView<FileInfo> serverTable;
-    @FXML private Button playButton;
-    @FXML private Button downloadButton;
-    @FXML private Button uploadButton;
     @FXML private TextField serverIpTxtBox;
+    @FXML private Button downloadButton;
     @FXML private Button connectButton;
+    @FXML private Button uploadButton;
+    @FXML private Button selectButton;
+    @FXML private Button playButton;
+    private AnchorPane anchorPane;
 
     //-------------------------------
     //      ATTRIBUTES
     //-------------------------------
-    private Monitor sharedFolder;
-    private MyMediaPlayer localFolder;
     private boolean clientIsSelected = false;
     private boolean serverIsSelected = false;
+    private MyMediaPlayer localFolder;
+    private Monitor sharedFolder;
     private Thread sharedThread;
     private Thread localThread;
     private static final Pattern PATTERN = Pattern.compile(
@@ -55,9 +55,9 @@ public class MyMediaPlayerController {
     //-------------------------------
     //      SOCKET ATTRIBUTES
     //-------------------------------
+    private static final int SOCKET_PORT_NO = 1234;
     private ServerSocket serverSocket;
     private Socket socket;
-    private static final int SOCKET_PORT_NO = 1234;
     private DataOutputStream out;
     private DataInputStream in;
     private FileInfo fileInfoGlobal;
@@ -236,7 +236,7 @@ public class MyMediaPlayerController {
             // convert folder contents into an ArrayList
             this.localFolder.folderItemsToArrayList();
             // append items to table
-            this.clientTable.getItems().addAll(this.localFolder.getFileInfo());
+            this.clientTable.getItems().addAll(this.localFolder.getNames());
             // start thread
             localThread = new Thread(this.localFolder);
             localThread.start();
