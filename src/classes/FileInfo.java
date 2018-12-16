@@ -13,9 +13,9 @@ public class FileInfo implements Comparable<FileInfo>{
     //---------------------------
     //      CONSTRUCTORS
     //---------------------------
-    public FileInfo(){}
+    private FileInfo(){}
 
-    public FileInfo(String location, String name, String type, int size){
+    FileInfo(String location, String name, String type, int size){
         this.location = location;
         this.name = name;
         this.type = type;
@@ -43,7 +43,7 @@ public class FileInfo implements Comparable<FileInfo>{
         return size;
     }
 
-    public String getAbsolutePath() {
+    String getAbsolutePath() {
         return absolutePath;
     }
 
@@ -51,20 +51,20 @@ public class FileInfo implements Comparable<FileInfo>{
     //      SETTERS
     //---------------------------
 
-    public void setLocation(String location) {
+    private void setLocation(String location) {
         this.location = location;
         setAbsolutePath();
     }
 
-    public void setName(String name) {
+    private void setName(String name) {
         this.name = name;
     }
 
-    public void setType(String type) {
+    private void setType(String type) {
         this.type = type;
     }
 
-    public void setSize(int size) {
+    private void setSize(int size) {
         this.size = size;
     }
 
@@ -85,7 +85,7 @@ public class FileInfo implements Comparable<FileInfo>{
         return String.format("%s.%s", this.name, this.type);
     }
 
-    public static FileInfo createFileInfo(String path, String fileName){
+    static FileInfo createFileInfo(String path, String fileName){
         File f = new File(path + File.separator + fileName);
         FileInfo file = new FileInfo();
         file.setName(fileName.substring(0, fileName.lastIndexOf(".")));
