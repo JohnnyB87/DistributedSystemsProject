@@ -21,8 +21,12 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.rmi.Naming;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
 import java.util.regex.Pattern;
 
 public class MyMediaPlayerController {
@@ -56,11 +60,6 @@ public class MyMediaPlayerController {
     //      SOCKET ATTRIBUTES
     //-------------------------------
     private static final int SOCKET_PORT_NO = 1234;
-    private ServerSocket serverSocket;
-    private Socket socket;
-    private DataOutputStream out;
-    private DataInputStream in;
-    private FileInfo fileInfoGlobal;
 
     //-------------------------------
     //      METHODS
@@ -90,43 +89,15 @@ public class MyMediaPlayerController {
      * creates a new ServerSocket using the SOCKET_PORT_NO attribute
      * Uses a switch statement to switch between uploading and downloading content from the server
      */
-    private void startServer(){
-        new Thread(()->{
-            try {
-                System.out.println("Server started");
-                serverSocket = new ServerSocket(SOCKET_PORT_NO);
-                System.out.println("Waiting for connection");
-                socket = serverSocket.accept();
-                System.out.println("Successful connection");
-                in = new DataInputStream(socket.getInputStream());
-                out = new DataOutputStream(socket.getOutputStream());
-
-                while(true){
-                    // Gets an int from the inputStream used in the switch statement
-                    int actionCode = in.readInt();
-                    switch (actionCode){
-                        case 0:
-                            // if actionCode is 0 server receives data from the client
-                            sharedFolder.receiveFile(socket);
-                            break;
-                        case 1:
-                            // if actionCode is 1 server sends file for the client to download
-                            sharedFolder.sendFile(fileInfoGlobal, socket);
-                            break;
-                        default:
-                            break;
-                    }
-                    // Thread sleeps for 3 seconds
-                    Thread.sleep(3000);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                System.out.println("Server Thread interrupted.");
-                this.connectButton.setDisable(false);
-                e.printStackTrace();
-            }
-        }).start();
+    private void startServer() {
+        try {
+            LocateRegistry.createRegistry(SOCKET_PORT_NO);
+            Naming.rebind("rmi://localhost:" + SOCKET_PORT_NO + "/johnsRMI", this.sharedFolder);
+            System.out.println("Server running...");
+        } catch (RemoteException | MalformedURLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -184,25 +155,9 @@ public class MyMediaPlayerController {
      */
     public void connectButtonPressed() {
         System.out.println("Connecting to server");
-        // store the serverIpTxtBox input as a variable
-        String ipAddress = this.serverIpTxtBox.getText();
-        // check if valid ip address is entered
-        if(validateIpAddress(ipAddress.trim())){
-            // if valid try to connect to the server
-            if(localFolder.connectToServer(ipAddress)) {
-                // if successful disable the connect button
-                this.connectButton.setDisable(true);
-                // and load the servers folder contents into the associated table
-                serverTable.getItems().addAll(this.sharedFolder.getNames());
-            }
-            else{
-                // if unsuccessful create an alert to notify user
-                new Alert(Alert.AlertType.ERROR, "Connection Failed").show();
-            }
-        }else{
-            // if invalid ip address enterd notify user with an alert
-            new Alert(Alert.AlertType.ERROR, "Invalid Ip Address Entered").show();
-        }
+        this.localFolder.connectToServer();
+        serverTable.getItems().clear();
+        serverTable.getItems().addAll(this.sharedFolder.getNames());
     }
 
     /**
@@ -212,6 +167,7 @@ public class MyMediaPlayerController {
      */
     public void quitButtonPressed() {
         stopThreads();
+        System.exit(0);
         Platform.exit();
     }
 
@@ -295,26 +251,22 @@ public class MyMediaPlayerController {
      * creates alert windows if there are any errors
      */
     public void uploadButtonPressed() {
-        // check if the user has selected a folder
+        System.out.println(this.localFolder);
         if(this.localFolder.getLocalFolder() != null){
-            // stores the index of the selected item of the client table
-            // returns -1 if no item is selected
             int selected = this.clientTable.getSelectionModel().getSelectedIndex();
-            // checks that a valid item was selected
+            System.out.println("Index: " + selected);
             if (selected > -1) {
-                // gets the FileInfo associated with the selected item
+                System.out.println("Index: " + this.clientTable.getSelectionModel().getFocusedIndex());
                 FileInfo fileInfo = this.clientTable.getSelectionModel().getSelectedItems().get(0);
-                // uploads data from client to server
                 this.localFolder.uploadFile(fileInfo);
-                // checks if the server folder has been modified
-                if(this.sharedFolder.checkForChange()) {
-                    // adds the new file to the table if yes
+                if(this.sharedFolder.checkForChange())
                     serverTable.getItems().add(fileInfo);
-                }
             } else {
+                System.out.println("Select item to upload");
                 new Alert(Alert.AlertType.ERROR, "No file selected").show();
             }
         }else {
+            System.out.println("Select folder first");
             new Alert(Alert.AlertType.ERROR, "No folder selected").show();
         }
     }
@@ -332,15 +284,18 @@ public class MyMediaPlayerController {
     public void downloadButtonPressed() {
         if(this.localFolder.getLocalFolder() != null){
             int selected = this.serverTable.getSelectionModel().getSelectedIndex();
+            System.out.println("Index: " + selected);
             if (selected > -1) {
-                fileInfoGlobal = this.serverTable.getSelectionModel().getSelectedItems().get(0);
-                this.localFolder.downLoadFile(fileInfoGlobal);
+                FileInfo fileInfo = this.serverTable.getSelectionModel().getSelectedItems().get(0);
+                this.localFolder.downLoadFile(fileInfo);
                 if (this.localFolder.checkForChange())
-                    clientTable.getItems().add(fileInfoGlobal);
+                    clientTable.getItems().add(fileInfo);
             } else {
+                System.out.println("Select item to download");
                 new Alert(Alert.AlertType.ERROR, "No file selected").show();
             }
         }else {
+            System.out.println("Select folder first");
             new Alert(Alert.AlertType.ERROR, "No folder selected").show();
         }
     }

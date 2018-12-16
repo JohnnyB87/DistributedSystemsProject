@@ -1,11 +1,16 @@
 package classes;
 
+import interfaces.RemoteInterface;
 import interfaces.Viewer;
 import javafx.scene.control.Alert;
 
 import java.io.*;
+import java.net.MalformedURLException;
 import java.net.Socket;
 import java.nio.file.*;
+import java.rmi.Naming;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
@@ -21,9 +26,12 @@ public class MyMediaPlayer implements Runnable, Viewer {
     private ArrayList<FileInfo> names;
     private boolean isChanged;
     private String folderPath;
+    private Socket connectToServerSocket;
     private static int SOCKET_PORT_NO = 1234;
     private DataOutputStream out;
     private DataInputStream in;
+    private String ipAddress;
+    private RemoteInterface remoteInterface;
 
     //--------------------------------
     //      CONSTRUCTORS
@@ -134,18 +142,14 @@ public class MyMediaPlayer implements Runnable, Viewer {
      * Method used to connect the client to the server using an ip address
      * creates the needed socket and input/output streams
      *
-     * @param ipAddress the ip address of a server
      * @return true if it was able to connect successfully
      */
-    public boolean connectToServer(String ipAddress){
+    public boolean connectToServer(){
         try {
-            Socket connectToServerSocket = new Socket(ipAddress, SOCKET_PORT_NO);
-            in = new DataInputStream(connectToServerSocket.getInputStream());
-            out = new DataOutputStream(connectToServerSocket.getOutputStream());
-            System.out.println("Connection Success");
-            return true;
-        }catch(IOException e){
+            remoteInterface = (RemoteInterface) Naming.lookup("rmi://localhost:1234/johnsRMI");
+        } catch (NotBoundException | MalformedURLException | RemoteException e) {
             new Alert(Alert.AlertType.ERROR, "Connection Failed").show();
+            e.printStackTrace();
         }
         return false;
     }
@@ -157,40 +161,17 @@ public class MyMediaPlayer implements Runnable, Viewer {
      * @param file FileInfo object to be uploaded
      */
     public void uploadFile(FileInfo file){
-        // check if the file is not null or that it doesn't already exist on the server
         if(file != null && !MONITOR.fileExists(file)) {
-            try{
-                System.out.println("UPLOAD STARTED");
-                // create a new file object using the FileInfo's absolute path
-                File myFile = new File(file.getAbsolutePath());
-                // create a new byte array the size of the file to be sent
-                byte[] bytes = new byte[(int) myFile.length()];
-
-                // create a new InputStream using the created file
-                FileInputStream fis = new FileInputStream(myFile);
-                BufferedInputStream bis = new BufferedInputStream(fis);
-                DataInputStream dis = new DataInputStream(bis);
-                // read the input stream into the byte[]
-                dis.readFully(bytes, 0, bytes.length);
-
-                //handle file send over socket
-                // write an int to the output stream to notify that it's uploading
-                out.writeInt(0);
-                // pass the files name using the writeUTF method
-                out.writeUTF(myFile.getName());
-                // pass the files length over sockets
-                out.writeLong(bytes.length);
-                // write the byte[] to the output stream
-                out.write(bytes, 0, bytes.length);
-                // flush the output stream
-                out.flush();
-
-                System.out.println("File "+file.getName()+" sent to client.");
+            try {
+                System.out.println("Server side sending data");
+                file.setBytes(Files.readAllBytes(Paths.get(file.getAbsolutePath())));
+                remoteInterface.uploadFile(file);
+                System.out.println("Data sent");
             } catch (Exception e) {
-                System.err.println("File does not exist!");
+                System.err.println("uploadFile(): File does not exist!");
                 e.printStackTrace();
+                System.exit(0);
             }
-
         }
         else
             System.out.println("File already exists in this Folder.");
@@ -202,34 +183,20 @@ public class MyMediaPlayer implements Runnable, Viewer {
      * @param file
      */
     public void downLoadFile(FileInfo file){
-        // if statement to check if the file already exists in the folder
+        System.out.println("Inside downloadFile()");
         if(file != null && !this.fileExists(file)) {
-            try {
-                System.out.println("Client Downloading...");
-                int bytesRead;
-                // write int to output stream to notify server that it needs to send a file
-                out.writeInt(1);
-                // reads the files name using readUTF method
-                String fileName = in.readUTF();
-                // create new output stream telling it where to write the data
-                OutputStream output = new FileOutputStream(folderPath + File.separator + fileName);
-                // read in the files length
-                long size = in.readLong();
-                byte[] buffer = new byte[1024];
-                // loop that writes the the input streams byte[] to the output streams location
-                // loops until the whole file has been read
-                while (size > 0 && (bytesRead = in.read(buffer, 0, (int) Math.min(buffer.length, size))) != -1) {
-                    // write the bytes to the associated location
-                    output.write(buffer, 0, bytesRead);
-                    size -= bytesRead;
-                }
-
-                output.close();
-                System.out.println("File "+file.getName()+" received from Server.");
-                System.out.println("Downloading Finished");
-            } catch (IOException ex) {
-                ex.printStackTrace();
+            try{
+                FileInfo fileInfo = remoteInterface.downloadFile(file);
+                String fileName = fileInfo.getName() + "." + fileInfo.getType();
+                Path path = Paths.get(folderPath + File.separator + fileName);
+                Files.write(path, fileInfo.getBytes());
+                fileInfo.setLocation(folderPath);
+                this.addFile(fileInfo);
+                this.isChanged = true;
+            } catch (IOException e) {
+                e.printStackTrace();
             }
+            System.out.println("Download Complete");
         }
         else
             System.out.println("File already exists in this Folder.");
