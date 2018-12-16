@@ -69,23 +69,6 @@ public class Monitor implements Viewer, Runnable {
     }
 
     @Override
-    public boolean openFile(String name) {
-        try {
-            if (names != null) {
-                for (FileInfo fileName : names)
-                    if (name.equalsIgnoreCase(fileName.getName())) {
-                        String filePath = fileName.getAbsolutePath();
-                        fileInfo = fileName;
-                        return true;
-                    }
-            }
-        }catch (NullPointerException npe) {
-            System.out.println("Null Pointer Exception --> Class: Monitor --> Method: openFile(String)");
-        }
-        return false;
-    }
-
-    @Override
     public boolean checkForChange() {
         if(isChanged) {
             isChanged = false;

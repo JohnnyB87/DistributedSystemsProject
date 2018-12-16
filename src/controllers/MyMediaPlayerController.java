@@ -22,16 +22,13 @@ import java.util.regex.Pattern;
 public class MyMediaPlayerController {
 
     private AnchorPane anchorPane;
-    @FXML private Button refreshButton;
     @FXML private Button selectButton;
     @FXML private MediaPlayerTableView<FileInfo> clientTable;
     @FXML private MediaPlayerTableView<FileInfo> serverTable;
     @FXML private Button playButton;
-    @FXML private Button quitButton;
     @FXML private Button downloadButton;
     @FXML private Button uploadButton;
     @FXML private TextField serverIpTxtBox;
-    @FXML private Button connectButton;
 
     private Monitor sharedFolder;
     private MyMediaPlayer localFolder;
@@ -40,7 +37,6 @@ public class MyMediaPlayerController {
     private boolean serverIsSelected = false;
     private Thread sharedThread;
     private Thread localThread;
-    private Thread serverThread;
     private static final Pattern PATTERN = Pattern.compile(
             "^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");
 

@@ -20,11 +20,9 @@ public class MyMediaPlayer implements Runnable{
     private ArrayList<FileInfo> fileInfo;
     private boolean isChanged;
     private String folderPath;
-    private Socket connectToServerSocket;
     private static int SOCKET_PORT_NO = 1234;
     private DataOutputStream out;
     private DataInputStream in;
-    private String ipAddress;
 
     //--------------------------------
     //      CONSTRUCTORS
@@ -93,21 +91,6 @@ public class MyMediaPlayer implements Runnable{
                 this.fileInfo.add(fileInfo);
 
             }
-        }
-    }
-
-    private void copyFile(FileInfo file, String source, String destination){
-        try {
-            String fileName = file.getName() + "." + file.getType();
-            String sourcePath = String.format("%s%s", source, File.separator + fileName);
-            String destinationPath = String.format("%s%s",destination, File.separator + fileName);
-
-            Files.copy(Paths.get(sourcePath), Paths.get(destinationPath));
-
-            System.out.println("Successful Copy\nSource: " + sourcePath);
-            System.out.println("Destination: " + destinationPath);
-        }catch(IOException ioe){
-            System.out.println("IOException: Class --> MyMediaPlayer --> copyFile()");
         }
     }
 
@@ -236,8 +219,7 @@ public class MyMediaPlayer implements Runnable{
 
     public boolean connectToServer(String ipAddress){
         try {
-            this.ipAddress = ipAddress;
-            connectToServerSocket = new Socket(this.ipAddress, SOCKET_PORT_NO);
+            Socket connectToServerSocket = new Socket(ipAddress, SOCKET_PORT_NO);
             in = new DataInputStream(connectToServerSocket.getInputStream());
             out = new DataOutputStream(connectToServerSocket.getOutputStream());
             System.out.println("Connection Success");
