@@ -1,14 +1,16 @@
 package classes;
 
 import java.io.File;
+import java.io.Serializable;
 
-public class FileInfo implements Comparable<FileInfo>{
+public class FileInfo implements Comparable<FileInfo>, Serializable {
 
     private String absolutePath;
     private String location;
     private String name;
     private String type;
     private int size;
+    private byte[] bytes;
 
     //---------------------------
     //      CONSTRUCTORS
@@ -47,6 +49,10 @@ public class FileInfo implements Comparable<FileInfo>{
         return absolutePath;
     }
 
+    public byte[] getBytes() {
+        return bytes;
+    }
+
     //---------------------------
     //      SETTERS
     //---------------------------
@@ -72,6 +78,10 @@ public class FileInfo implements Comparable<FileInfo>{
         this.absolutePath = this.location + File.separator + this.name + "." + this.type;
     }
 
+    public void setBytes(byte[] bytes) {
+        this.bytes = bytes;
+    }
+
     //---------------------------
     //      EXTRA FUNCTIONALITY
     //---------------------------
@@ -81,6 +91,7 @@ public class FileInfo implements Comparable<FileInfo>{
                 this.name.compareToIgnoreCase(file.name) == 1 && this.type.compareToIgnoreCase(file.getType()) == 1 ? 1 : -1;
     }
 
+    @Override
     public String toString(){
         return String.format("%s.%s", this.name, this.type);
     }

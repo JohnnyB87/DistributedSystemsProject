@@ -1,6 +1,7 @@
 package controllers;
 
 import classes.*;
+import interfaces.RemoteInterface;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -13,25 +14,26 @@ import javafx.scene.layout.StackPane;
 import javafx.stage.*;
 
 import java.io.*;
+import java.net.MalformedURLException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.rmi.Naming;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
 import java.util.Set;
 import java.util.regex.Pattern;
 
 public class MyMediaPlayerController {
 
     private AnchorPane anchorPane;
-    @FXML private Button refreshButton;
     @FXML private Button selectButton;
     @FXML private MediaPlayerTableView<FileInfo> clientTable;
     @FXML private MediaPlayerTableView<FileInfo> serverTable;
     @FXML private Button playButton;
-    @FXML private Button quitButton;
     @FXML private Button downloadButton;
     @FXML private Button uploadButton;
-    @FXML private TextField serverIpTxtBox;
-    @FXML private Button connectButton;
 
     private Monitor sharedFolder;
     private MyMediaPlayer localFolder;
@@ -40,18 +42,9 @@ public class MyMediaPlayerController {
     private boolean serverIsSelected = false;
     private Thread sharedThread;
     private Thread localThread;
-    private Thread serverThread;
-    private static final Pattern PATTERN = Pattern.compile(
-            "^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");
 
 
-    private ServerSocket serverSocket;
-    private Socket socket;
     private static final int SOCKET_PORT_NO = 1234;
-    private DataOutputStream out;
-    private DataInputStream in;
-    private String filePath;
-    private FileInfo fileInfoGlobal;
 
 
     @FXML
@@ -70,55 +63,21 @@ public class MyMediaPlayerController {
     }
 
     private void startServer(){
-        new Thread(()->{
-            try {
-                System.out.println("Server started");
-                serverSocket = new ServerSocket(SOCKET_PORT_NO);
-                System.out.println("Waiting for connection");
-                socket = serverSocket.accept();
-                System.out.println("Successful connection");
-                in = new DataInputStream(socket.getInputStream());
-                out = new DataOutputStream(socket.getOutputStream());
-
-                while(true){
-                    int actionCode = in.readInt();
-                    System.out.println(actionCode);
-                    switch (actionCode){
-                        case 0:
-                            sharedFolder.receiveFile(socket);
-                            break;
-                        case 1:
-                            System.out.println("Downloading data...");
-                            sharedFolder.sendFile(fileInfoGlobal, socket);
-                            break;
-                        default:
-                            break;
-                    }
-                    Thread.sleep(3000);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (InterruptedException e) {
-                System.out.println("Server Thread interrupted.");
-                e.printStackTrace();
-            }
-
-        }).start();
+        try {
+            LocateRegistry.createRegistry(SOCKET_PORT_NO);
+            Naming.rebind("rmi://localhost:1234/johnsRMI", this.sharedFolder);
+            System.out.println("Server running...");
+        } catch (RemoteException | MalformedURLException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
     public void connectButtonPressed() {
         System.out.println("Connecting to server");
-        String ipAddress = this.serverIpTxtBox.getText();
-        boolean isValidIpAddress = validateIpAddress(ipAddress.trim());
-        if(isValidIpAddress){
-            if(localFolder.connectToServer(ipAddress)) {
-                serverTable.getItems().addAll(this.sharedFolder.getNames());
-            }
-            else
-                new Alert(Alert.AlertType.ERROR, "Connection Failed").show();
-        }else{
-            new Alert(Alert.AlertType.ERROR, "Invalid Ip Address Entered").show();
-        }
+        this.localFolder.connectToServer();
+        serverTable.getItems().clear();
+        serverTable.getItems().addAll(this.sharedFolder.getNames());
     }
 
     public void quitButtonPressed() {
@@ -198,11 +157,10 @@ public class MyMediaPlayerController {
             int selected = this.serverTable.getSelectionModel().getSelectedIndex();
             System.out.println("Index: " + selected);
             if (selected > -1) {
-                fileInfoGlobal = this.serverTable.getSelectionModel().getSelectedItems().get(0);
-
-                this.localFolder.downLoadFile(fileInfoGlobal);
+                FileInfo fileInfo = this.serverTable.getSelectionModel().getSelectedItems().get(0);
+                this.localFolder.downLoadFile(fileInfo);
                 if (this.localFolder.checkForChange())
-                        clientTable.getItems().add(fileInfoGlobal);
+                    clientTable.getItems().add(fileInfo);
             } else {
                 System.out.println("Select item to download");
                 alert = new Alert(Alert.AlertType.ERROR, "No file selected");
@@ -286,7 +244,4 @@ public class MyMediaPlayerController {
         sharedThread.interrupt();
     }
 
-    private boolean validateIpAddress(String ipAddress){
-        return PATTERN.matcher(ipAddress).matches();
-    }
 }
