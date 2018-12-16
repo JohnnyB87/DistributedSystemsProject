@@ -65,7 +65,7 @@ public class MyMediaPlayerController {
     private void startServer(){
         try {
             LocateRegistry.createRegistry(SOCKET_PORT_NO);
-            Naming.rebind("rmi://localhost:1234/johnsRMI", this.sharedFolder);
+            Naming.rebind("rmi://localhost:" + SOCKET_PORT_NO + "/johnsRMI", this.sharedFolder);
             System.out.println("Server running...");
         } catch (RemoteException | MalformedURLException e) {
             // TODO Auto-generated catch block
@@ -82,6 +82,7 @@ public class MyMediaPlayerController {
 
     public void quitButtonPressed() {
         stopThreads();
+        System.exit(0);
         Platform.exit();
     }
 
@@ -139,7 +140,6 @@ public class MyMediaPlayerController {
                 System.out.println("Index: " + this.clientTable.getSelectionModel().getFocusedIndex());
                 FileInfo fileInfo = this.clientTable.getSelectionModel().getSelectedItems().get(0);
                     this.localFolder.uploadFile(fileInfo);
-                    System.out.println("FOLDER CHANGED: " + this.sharedFolder.checkForChange());
                     if(this.sharedFolder.checkForChange())
                         serverTable.getItems().add(fileInfo);
             } else {
