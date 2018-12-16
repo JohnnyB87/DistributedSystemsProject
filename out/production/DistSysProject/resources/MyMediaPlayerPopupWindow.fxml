@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.media.MediaView?>
+
+<AnchorPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            prefHeight="440.0" prefWidth="600.0"
+            fx:id="anchorPane">
+    <Label fx:id="labelPopup" style="-fx-font-size: 20;" alignment="CENTER"/>
+    <MediaView fx:id="mediaView" fitHeight="350" fitWidth="${anchorPane.width}" layoutY="40.0" />
+    <HBox spacing="25" prefWidth="600" prefHeight="50" layoutY="390" alignment="CENTER" >
+        <Button fx:id="playButton" text=">" prefWidth="50" />
+        <Button fx:id="pauseButton" text="||" prefWidth="50" />
+        <Button fx:id="quitButton" text="X" prefWidth="50" />
+    </HBox>
+</AnchorPane>
