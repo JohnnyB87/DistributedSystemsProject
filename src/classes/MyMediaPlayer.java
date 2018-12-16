@@ -60,6 +60,7 @@ public class MyMediaPlayer implements Runnable, Viewer {
     //--------------------------------
 
     /**
+     * Method implemented from the Runnable Interface
      * Thread that monitors the associated directory for changes
      */
     @Override
@@ -72,14 +73,24 @@ public class MyMediaPlayer implements Runnable, Viewer {
         }
     }
 
+    /**
+     * Method implemented from the Viewer Interface
+     * @return an ArrayList of FileInfo objects
+     */
     @Override
     public ArrayList<FileInfo> getNames() {
         return names;
     }
 
+    /**
+     * Method implemented from the Viewer Interface
+     * @return a boolean stating if the associated folder has been changed
+     */
     @Override
     public boolean checkForChange() {
+        // if it has been changed
         if(isChanged) {
+            // reset the global boolean variable to false and return true
             isChanged = false;
             return true;
         }
@@ -89,48 +100,89 @@ public class MyMediaPlayer implements Runnable, Viewer {
     //--------------------------------
     //      EXTRA FUNCTIONALITY
     //--------------------------------
+
+    /**
+     * Method that reads the folder contents
+     * and converts them to FileInfo objects
+     * and appends them to an ArrayList
+     */
     public void folderItemsToArrayList() {
-        String path = this.localFolder.getAbsolutePath();
+        // convert folder contents into an array
         String[] array = this.localFolder.list();
         names = new ArrayList<>();
 
+        // check if the array is not null
         if (array != null) {
+            // loop through the array
             for (String s : array) {
-                File file = new File(path + File.separator + s);
+                // create a new file from the string
+                File file = new File(this.folderPath + File.separator + s);
 
+                // get file name and type from string
                 String fileName = s.substring(0, s.lastIndexOf("."));
                 String fileType = s.substring(s.lastIndexOf(".") + 1);
 
-                FileInfo fileInfo = new FileInfo(path, fileName, fileType, (int)file.length() );
+                // create a new FileInfo object
+                FileInfo fileInfo = new FileInfo(this.folderPath, fileName, fileType, (int)file.length());
+                // add FileInfo object to the ArrayList
                 this.names.add(fileInfo);
             }
         }
     }
 
-    public void uploadFile(FileInfo file){
+    /**
+     * Method used to connect the client to the server using an ip address
+     * creates the needed socket and input/output streams
+     *
+     * @param ipAddress the ip address of a server
+     * @return true if it was able to connect successfully
+     */
+    public boolean connectToServer(String ipAddress){
+        try {
+            Socket connectToServerSocket = new Socket(ipAddress, SOCKET_PORT_NO);
+            in = new DataInputStream(connectToServerSocket.getInputStream());
+            out = new DataOutputStream(connectToServerSocket.getOutputStream());
+            System.out.println("Connection Success");
+            return true;
+        }catch(IOException e){
+            new Alert(Alert.AlertType.ERROR, "Connection Failed").show();
+        }
+        return false;
+    }
 
+    /**
+     * Method that allows the client to upload a given FileInfo object to the server
+     * Converts the file into a byte[] and sends it to the server via sockets
+     *
+     * @param file FileInfo object to be uploaded
+     */
+    public void uploadFile(FileInfo file){
+        // check if the file is not null or that it doesn't already exist on the server
         if(file != null && !MONITOR.fileExists(file)) {
             try{
                 System.out.println("UPLOAD STARTED");
-                System.out.println(file.getAbsolutePath());
+                // create a new file object using the FileInfo's absolute path
                 File myFile = new File(file.getAbsolutePath());
-                MONITOR.setFileInfo(FileInfo.createFileInfo(MONITOR.getFolderPath(), myFile.getName()));
+                // create a new byte array the size of the file to be sent
                 byte[] bytes = new byte[(int) myFile.length()];
 
-                System.out.println("byte[] created");
-
+                // create a new InputStream using the created file
                 FileInputStream fis = new FileInputStream(myFile);
                 BufferedInputStream bis = new BufferedInputStream(fis);
-                //bis.read(bytes, 0, bytes.length);
-
                 DataInputStream dis = new DataInputStream(bis);
+                // read the input stream into the byte[]
                 dis.readFully(bytes, 0, bytes.length);
-                //handle file send over socket
 
+                //handle file send over socket
+                // write an int to the output stream to notify that it's uploading
                 out.writeInt(0);
+                // pass the files name using the writeUTF method
                 out.writeUTF(myFile.getName());
+                // pass the files length over sockets
                 out.writeLong(bytes.length);
+                // write the byte[] to the output stream
                 out.write(bytes, 0, bytes.length);
+                // flush the output stream
                 out.flush();
 
                 System.out.println("File "+file.getName()+" sent to client.");
@@ -144,20 +196,30 @@ public class MyMediaPlayer implements Runnable, Viewer {
             System.out.println("File already exists in this Folder.");
     }
 
+    /**
+     * Method that allows the client to download a file from the server via sockets
+     *
+     * @param file
+     */
     public void downLoadFile(FileInfo file){
-        System.out.println("Inside downloadFile()");
+        // if statement to check if the file already exists in the folder
         if(file != null && !this.fileExists(file)) {
-            System.out.println("File not null");
             try {
                 System.out.println("Client Downloading...");
                 int bytesRead;
+                // write int to output stream to notify server that it needs to send a file
                 out.writeInt(1);
+                // reads the files name using readUTF method
                 String fileName = in.readUTF();
-                System.out.println("File Path: " + fileName);
+                // create new output stream telling it where to write the data
                 OutputStream output = new FileOutputStream(folderPath + File.separator + fileName);
+                // read in the files length
                 long size = in.readLong();
                 byte[] buffer = new byte[1024];
+                // loop that writes the the input streams byte[] to the output streams location
+                // loops until the whole file has been read
                 while (size > 0 && (bytesRead = in.read(buffer, 0, (int) Math.min(buffer.length, size))) != -1) {
+                    // write the bytes to the associated location
                     output.write(buffer, 0, bytesRead);
                     size -= bytesRead;
                 }
@@ -173,10 +235,24 @@ public class MyMediaPlayer implements Runnable, Viewer {
             System.out.println("File already exists in this Folder.");
     }
 
+    /**
+     * method that allows you to add a new file to the names array list
+     *
+     * @param file FileInfo object that gets added to the ArrayList
+     */
     private void addFile(FileInfo file) {
         this.names.add(file);
     }
 
+    /**
+     * Method to check if a file already exist in the folder
+     * loops through the names ArrayList comparing the FileInfo object
+     * with each item in the ArrayList until it finds a match
+     * or finishes the loop
+     *
+     * @param file FileInfo object to check
+     * @return true if the file already exists
+     */
     public boolean fileExists(FileInfo file){
         for(FileInfo f : this.names){
             if(file.compareTo(f) == 0)
@@ -185,6 +261,12 @@ public class MyMediaPlayer implements Runnable, Viewer {
         return false;
     }
 
+    /**
+     * Method used to watch the associated folder
+     * uses the WatchService class to monitor the folder for any additions or deletions
+     * adds or removes the associated FileInfo object to/from the names ArrayList
+     * changes the isChanged boolean value to true if there's a change
+     */
     private void watchDirectory(){
         Path path = Paths.get(this.folderPath);
         FileSystem fs = FileSystems.getDefault();
@@ -194,7 +276,6 @@ public class MyMediaPlayer implements Runnable, Viewer {
             WatchKey key;
             do {
                 key = service.take();
-//                System.out.println(key.pollEvents());
                 for (WatchEvent event : key.pollEvents()) {
                     WatchEvent.Kind kind = event.kind();
                     String fileName = event.context().toString();
@@ -207,9 +288,9 @@ public class MyMediaPlayer implements Runnable, Viewer {
                         this.addFile(file);
                     } else if (StandardWatchEventKinds.ENTRY_DELETE.equals(kind)) {
                         isChanged = true;
+                        this.names.remove(file);
                         System.out.println("File deleted: " + fileName);
                     }
-                    System.out.println(isChanged);
                 }
 
             } while (key.reset());
@@ -219,19 +300,6 @@ public class MyMediaPlayer implements Runnable, Viewer {
         }catch (IOException ioe) {
             System.out.println("IOException: --> Class: MyMediaPlayer --> Method: watchDirectory()");
         }
-    }
-
-    public boolean connectToServer(String ipAddress){
-        try {
-            Socket connectToServerSocket = new Socket(ipAddress, SOCKET_PORT_NO);
-            in = new DataInputStream(connectToServerSocket.getInputStream());
-            out = new DataOutputStream(connectToServerSocket.getOutputStream());
-            System.out.println("Connection Success");
-            return true;
-        }catch(IOException e){
-            new Alert(Alert.AlertType.ERROR, "Connection Failed").show();
-        }
-        return false;
     }
 
 }
