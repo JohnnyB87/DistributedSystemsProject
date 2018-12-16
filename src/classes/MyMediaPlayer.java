@@ -97,34 +97,34 @@ public class MyMediaPlayer implements Runnable{
     public void uploadFile(FileInfo file){
 
         if(file != null && !MONITOR.fileExists(file)) {
-                try{
-                    System.out.println("UPLOAD STARTED");
-                    System.out.println(file.getAbsolutePath());
-                    File myFile = new File(file.getAbsolutePath());
-                    MONITOR.setFileInfo(FileInfo.createFileInfo(MONITOR.getFolderPath(), myFile.getName()));
-                    byte[] bytes = new byte[(int) myFile.length()];
+            try{
+                System.out.println("UPLOAD STARTED");
+                System.out.println(file.getAbsolutePath());
+                File myFile = new File(file.getAbsolutePath());
+                MONITOR.setFileInfo(FileInfo.createFileInfo(MONITOR.getFolderPath(), myFile.getName()));
+                byte[] bytes = new byte[(int) myFile.length()];
 
-                    System.out.println("byte[] created");
+                System.out.println("byte[] created");
 
-                    FileInputStream fis = new FileInputStream(myFile);
-                    BufferedInputStream bis = new BufferedInputStream(fis);
-                    //bis.read(bytes, 0, bytes.length);
+                FileInputStream fis = new FileInputStream(myFile);
+                BufferedInputStream bis = new BufferedInputStream(fis);
+                //bis.read(bytes, 0, bytes.length);
 
-                    DataInputStream dis = new DataInputStream(bis);
-                    dis.readFully(bytes, 0, bytes.length);
-                    //handle file send over socket
+                DataInputStream dis = new DataInputStream(bis);
+                dis.readFully(bytes, 0, bytes.length);
+                //handle file send over socket
 
-                    out.writeInt(0);
-                    out.writeUTF(myFile.getName());
-                    out.writeLong(bytes.length);
-                    out.write(bytes, 0, bytes.length);
-                    out.flush();
+                out.writeInt(0);
+                out.writeUTF(myFile.getName());
+                out.writeLong(bytes.length);
+                out.write(bytes, 0, bytes.length);
+                out.flush();
 
-                    System.out.println("File "+file.getName()+" sent to client.");
-                } catch (Exception e) {
-                    System.err.println("File does not exist!");
-                    e.printStackTrace();
-                }
+                System.out.println("File "+file.getName()+" sent to client.");
+            } catch (Exception e) {
+                System.err.println("File does not exist!");
+                e.printStackTrace();
+            }
 
         }
         else
@@ -135,27 +135,26 @@ public class MyMediaPlayer implements Runnable{
         System.out.println("Inside downloadFile()");
         if(file != null && !this.fileExists(file)) {
             System.out.println("File not null");
-                try {
-                    System.out.println("Client Downloading...");
-                    int bytesRead;
-                    out.writeInt(1);
-                    String fileName = in.readUTF();
-                    System.out.println("File Path: " + fileName);
-                    OutputStream output = new FileOutputStream(folderPath + File.separator + fileName);
-                    long size = in.readLong();
-                    byte[] buffer = new byte[1024];
-                    while (size > 0 && (bytesRead = in.read(buffer, 0, (int) Math.min(buffer.length, size))) != -1) {
-                        output.write(buffer, 0, bytesRead);
-                        size -= bytesRead;
-                    }
-
-                    output.close();
-                    System.out.println("File "+file.getName()+" received from Server.");
-                    System.out.println("Downloading Finished");
-                } catch (IOException ex) {
-                    ex.printStackTrace();
+            try {
+                System.out.println("Client Downloading...");
+                int bytesRead;
+                out.writeInt(1);
+                String fileName = in.readUTF();
+                System.out.println("File Path: " + fileName);
+                OutputStream output = new FileOutputStream(folderPath + File.separator + fileName);
+                long size = in.readLong();
+                byte[] buffer = new byte[1024];
+                while (size > 0 && (bytesRead = in.read(buffer, 0, (int) Math.min(buffer.length, size))) != -1) {
+                    output.write(buffer, 0, bytesRead);
+                    size -= bytesRead;
                 }
 
+                output.close();
+                System.out.println("File "+file.getName()+" received from Server.");
+                System.out.println("Downloading Finished");
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
         }
         else
             System.out.println("File already exists in this Folder.");

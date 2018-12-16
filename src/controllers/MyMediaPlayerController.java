@@ -21,6 +21,9 @@ import java.util.regex.Pattern;
 
 public class MyMediaPlayerController {
 
+    //-----------------------------
+    //      GUI ATTRIBUTES
+    //-----------------------------
     private AnchorPane anchorPane;
     @FXML private Button selectButton;
     @FXML private MediaPlayerTableView<FileInfo> clientTable;
@@ -29,10 +32,13 @@ public class MyMediaPlayerController {
     @FXML private Button downloadButton;
     @FXML private Button uploadButton;
     @FXML private TextField serverIpTxtBox;
+    @FXML private Button connectButton;
 
+    //-------------------------------
+    //      ATTRIBUTES
+    //-------------------------------
     private Monitor sharedFolder;
     private MyMediaPlayer localFolder;
-    private Alert alert;
     private boolean clientIsSelected = false;
     private boolean serverIsSelected = false;
     private Thread sharedThread;
@@ -40,22 +46,28 @@ public class MyMediaPlayerController {
     private static final Pattern PATTERN = Pattern.compile(
             "^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");
 
-
+    //-------------------------------
+    //      SOCKET ATTRIBUTES
+    //-------------------------------
     private ServerSocket serverSocket;
     private Socket socket;
     private static final int SOCKET_PORT_NO = 1234;
     private DataOutputStream out;
     private DataInputStream in;
-    private String filePath;
     private FileInfo fileInfoGlobal;
 
+    //-------------------------------
+    //      METHODS
+    //-------------------------------
 
+    /**
+     * Method that is run automatically when the GUI is created
+     * Used to initialise some attributes and onclick listeners
+     */
     @FXML
     private void initialize(){
-
         this.localFolder = new MyMediaPlayer();
         this.sharedFolder = this.localFolder.getMonitor();
-//        serverTable.getItems().addAll(this.sharedFolder.getNames());
 
         clientTableSelected();
         serverTableSelected();
@@ -65,6 +77,13 @@ public class MyMediaPlayerController {
         sharedThread.start();
     }
 
+    /**
+     * Method that starts the server thread,
+     * it's called in the initialize method when the GUI is created.
+     * Initialises the socket attributes
+     * creates a new ServerSocket using the SOCKET_PORT_NO attribute
+     * Uses a switch statement to switch between uploading and downloading content from the server
+     */
     private void startServer(){
         new Thread(()->{
             try {
@@ -77,140 +96,228 @@ public class MyMediaPlayerController {
                 out = new DataOutputStream(socket.getOutputStream());
 
                 while(true){
+                    // Gets an int from the inputStream used in the switch statement
                     int actionCode = in.readInt();
-                    System.out.println(actionCode);
                     switch (actionCode){
                         case 0:
+                            // if actionCode is 0 server receives data from the client
                             sharedFolder.receiveFile(socket);
                             break;
                         case 1:
-                            System.out.println("Downloading data...");
+                            // if actionCode is 1 server sends file for the client to download
                             sharedFolder.sendFile(fileInfoGlobal, socket);
                             break;
                         default:
                             break;
                     }
+                    // Thread sleeps for 3 seconds
                     Thread.sleep(3000);
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (InterruptedException e) {
                 System.out.println("Server Thread interrupted.");
+                this.connectButton.setDisable(false);
                 e.printStackTrace();
             }
-
         }).start();
     }
 
+    /**
+     * Method to stop all threads associated with the program
+     */
+    private void stopThreads(){
+        if(this.localThread != null)
+            localThread.interrupt();
+        sharedThread.interrupt();
+    }
+
+    /**
+     * Method used to validate an IP address
+     * uses a regex pattern to compare the IP address
+     * @param ipAddress String value of IP address
+     * @return boolean indicated if the input string is a valid IP address
+     */
+    private boolean validateIpAddress(String ipAddress){
+        return PATTERN.matcher(ipAddress).matches();
+    }
+    //-----------------------------
+    //      ONCLICK METHODS
+    //-----------------------------
+    /**
+     * ocClickListener for the connect button
+     * Method user to connect the client to the server
+     * Gets the input from the serverIpTxtBox and checks if it's a valid IP address
+     * confirms if the client successfully connected to the server
+     */
     public void connectButtonPressed() {
         System.out.println("Connecting to server");
+        // store the serverIpTxtBox input as a variable
         String ipAddress = this.serverIpTxtBox.getText();
-        boolean isValidIpAddress = validateIpAddress(ipAddress.trim());
-        if(isValidIpAddress){
+        // check if valid ip address is entered
+        if(validateIpAddress(ipAddress.trim())){
+            // if valid try to connect to the server
             if(localFolder.connectToServer(ipAddress)) {
+                // if successful disable the connect button
+                this.connectButton.setDisable(true);
+                // and load the servers folder contents into the associated table
                 serverTable.getItems().addAll(this.sharedFolder.getNames());
             }
-            else
+            else{
+                // if unsuccessful create an alert to notify user
                 new Alert(Alert.AlertType.ERROR, "Connection Failed").show();
+            }
         }else{
+            // if invalid ip address enterd notify user with an alert
             new Alert(Alert.AlertType.ERROR, "Invalid Ip Address Entered").show();
         }
     }
 
+    /**
+     * onClick listener for the quit button
+     * Stops the threads that have been started
+     * closes GUI
+     */
     public void quitButtonPressed() {
         stopThreads();
         Platform.exit();
     }
 
+    /**
+     * onClick listener for the select button
+     * Opens a Directory Chooser window to allow the user to choose a folder
+     * once a folder is selected, converts the contents into FileInfo objects
+     * and adds them to a list in the client
+     * then populates the clients table using the list created
+     * starts the client thread
+     */
     public void selectButtonPressed() {
         try {
+            // clear the contents of the client table
             this.clientTable.getItems().clear();
             DirectoryChooser directoryChooser = new DirectoryChooser();
+            // open the GUI for the directory chooser
             File selectedFolder = directoryChooser.showDialog(this.selectButton.getScene().getWindow());
 
+            // set the clients local folder to the selected item
             this.localFolder.setLocalFolder(selectedFolder);
+            // convert folder contents into an ArrayList
             this.localFolder.folderItemsToArrayList();
+            // append items to table
             this.clientTable.getItems().addAll(this.localFolder.getFileInfo());
+            // start thread
             localThread = new Thread(this.localFolder);
             localThread.start();
         }catch(Exception e){
             e.printStackTrace();
-            System.out.println("Folder not selected.");
-            alert = new Alert(Alert.AlertType.ERROR, "No folder selected");
-            alert.show();
+            // create alert window if a folder is selected
+            new Alert(Alert.AlertType.ERROR, "No folder selected").show();
         }
 
     }
 
+    /**
+     * onClick listener for the play button
+     * checks if one of the tables have been selected
+     * checks if the file is playable
+     * creates a new window and plays the selected file
+     */
     public void playButtonPressed() {
         if(serverIsSelected || clientIsSelected) {
             try {
-
-                FileInfo s = serverIsSelected ? serverTable.getSelectionModel().getSelectedItem()
+                // Gets the selected item and stores it as a FileInfo Object
+                FileInfo fileInfo = serverIsSelected ? serverTable.getSelectionModel().getSelectedItem()
                         : clientTable.getSelectionModel().getSelectedItem();
+                // checks if the file isn't null and that it's either an mp3 or mp4 file
+                if(fileInfo != null && (fileInfo.getType().equalsIgnoreCase("mp3")
+                        || fileInfo.getType().equalsIgnoreCase("mp4"))) {
+                    // variable used to set the new windows label
+                    String name = fileInfo.getName() != null ? fileInfo.getName() : "NULL";
 
-                String name = s != null ? s.getName() : "NULL";
-//                String type = s != null ? s.getType() : "NULL";
-//                File file = new File(sharedFolder.getFolderPath() + File.separator + name + "." + type);
+                    // create the GUI from an FXML file
+                    FXMLLoader loader = new FXMLLoader(getClass().getResource("../resources/MyMediaPlayerPopupWindow.fxml"));
+                    // create a controller for the GUI
+                    MyMediaPlayerPopupController myController = new MyMediaPlayerPopupController(fileInfo);
+                    // set the GUI's controller
+                    loader.setController(myController);
+                    this.anchorPane = loader.load();
+                    myController.setLabelPopupText(name);
 
-                FXMLLoader loader = new FXMLLoader(getClass().getResource("../resources/MyMediaPlayerPopupWindow.fxml"));
-
-                MyMediaPlayerPopupController myController = new MyMediaPlayerPopupController(s);
-                loader.setController(myController);
-                this.anchorPane = loader.load();
-                myController.setLabelPopupText(name);
-
-                createNewStage(myController);
+                    // create the new window
+                    createNewStage(myController);
+                }
             } catch (IOException | NullPointerException e) {
                 e.printStackTrace();
             }
         }
     }
 
+    /**
+     * onClick listener for the upload button
+     * checks if a folder has been selected by the user
+     * checks if the user has selected an item on the table
+     * gets the item selected from the client table
+     * uploads the content fro the client
+     * checks if the server folder has been modified
+     * updates the server table to reflect the change
+     * creates alert windows if there are any errors
+     */
     public void uploadButtonPressed() {
-        System.out.println(this.localFolder);
+        // check if the user has selected a folder
         if(this.localFolder.getLocalFolder() != null){
+            // stores the index of the selected item of the client table
+            // returns -1 if no item is selected
             int selected = this.clientTable.getSelectionModel().getSelectedIndex();
-            System.out.println("Index: " + selected);
+            // checks that a valid item was selected
             if (selected > -1) {
-                System.out.println("Index: " + this.clientTable.getSelectionModel().getFocusedIndex());
+                // gets the FileInfo associated with the selected item
                 FileInfo fileInfo = this.clientTable.getSelectionModel().getSelectedItems().get(0);
-                    this.localFolder.uploadFile(fileInfo);
-                    System.out.println("FOLDER CHANGED: " + this.sharedFolder.checkForChange());
-                    if(this.sharedFolder.checkForChange())
-                        serverTable.getItems().add(fileInfo);
+                // uploads data from client to server
+                this.localFolder.uploadFile(fileInfo);
+                // checks if the server folder has been modified
+                if(this.sharedFolder.checkForChange()) {
+                    // adds the new file to the table if yes
+                    serverTable.getItems().add(fileInfo);
+                }
             } else {
-                System.out.println("Select item to upload");
                 new Alert(Alert.AlertType.ERROR, "No file selected").show();
             }
         }else {
-            System.out.println("Select folder first");
             new Alert(Alert.AlertType.ERROR, "No folder selected").show();
         }
     }
 
+    /**
+     * onClick listener for the download button
+     * checks if a folder has been selected by the user
+     * checks if the user has selected an item on the table
+     * gets the item selected from the client table
+     * download the content to the client
+     * checks if the client folder has been modified
+     * updates the client table to reflect the change
+     * creates alert windows if there are any errors
+     */
     public void downloadButtonPressed() {
         if(this.localFolder.getLocalFolder() != null){
             int selected = this.serverTable.getSelectionModel().getSelectedIndex();
-            System.out.println("Index: " + selected);
             if (selected > -1) {
                 fileInfoGlobal = this.serverTable.getSelectionModel().getSelectedItems().get(0);
-
                 this.localFolder.downLoadFile(fileInfoGlobal);
                 if (this.localFolder.checkForChange())
-                        clientTable.getItems().add(fileInfoGlobal);
+                    clientTable.getItems().add(fileInfoGlobal);
             } else {
-                System.out.println("Select item to download");
-                alert = new Alert(Alert.AlertType.ERROR, "No file selected");
-                alert.show();
+                new Alert(Alert.AlertType.ERROR, "No file selected").show();
             }
         }else {
-            System.out.println("Select folder first");
-            alert = new Alert(Alert.AlertType.ERROR, "No folder selected");
-            alert.show();
+            new Alert(Alert.AlertType.ERROR, "No folder selected").show();
         }
     }
 
+    /**
+     * onClick listener for the refresh button
+     * used to refresh the server table items
+     * clears the list and adds all the items from the servers list
+     */
     public void refreshButtonPressed() {
         if(this.sharedFolder.checkForChange()) {
             serverTable.getItems().clear();
@@ -218,36 +325,51 @@ public class MyMediaPlayerController {
         }
     }
 
-    public void serverTableSelected() {
+    /**
+     * onClick listener for the server table
+     * checks the items in the clients folder
+     * disables/enables the appropriate buttons
+     * alerts user if no folder has been selected
+     */
+    private void serverTableSelected() {
         this.serverTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
             this.clientIsSelected = false;
             this.serverIsSelected = true;
+            // disable the upload button
             this.uploadButton.setDisable(true);
+            // checks if there's a client folder
             if(this.localFolder.getLocalFolder() != null) {
+                // check if the selection is not null and if it exists in the client folder
                 if (newSelection != null && this.localFolder.fileExists(newSelection)) {
+                    //if it does enable the play button and disable the download button
                     this.playButton.setDisable(false);
                     this.downloadButton.setDisable(true);
                 }
                 else {
+                    // else disable the play button and enable the download button
                     this.playButton.setDisable(true);
                     this.downloadButton.setDisable(false);
                 }
             }
             else {
-                System.out.println("Select folder first");
-                alert = new Alert(Alert.AlertType.ERROR, "No folder selected");
-                alert.show();
+                new Alert(Alert.AlertType.ERROR, "No folder selected").show();
             }
         });
     }
 
-    public void clientTableSelected() {
+    /**
+     * onClick listener for the client table
+     * checks the items in the server folder
+     * disables/enables the appropriate buttons
+     */
+    private void clientTableSelected() {
         this.clientTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
             this.clientIsSelected = true;
             this.serverIsSelected = false;
             this.playButton.setDisable(false);
             this.downloadButton.setDisable(true);
             if(this.sharedFolder.getFolder() != null) {
+                // if file exists in the server disable the upload button else enable it
                 if (this.sharedFolder.fileExists(newSelection))
                     this.uploadButton.setDisable(true);
                 else
@@ -256,6 +378,10 @@ public class MyMediaPlayerController {
         });
     }
 
+    /**
+     * Method used to create a new child stage that plays the folders content
+     * @param myController a controller for the the window
+     */
     private void createNewStage(MyMediaPlayerPopupController myController){
         String title = "Media Player";
 
@@ -270,19 +396,10 @@ public class MyMediaPlayerController {
         stage.setScene(scene);
         stage.setResizable(false);
         stage.initOwner(this.playButton.getScene().getWindow());
-        stage.setOnCloseRequest(event -> {
-            myController.quitButtonPressed();
-        });
+        stage.setOnCloseRequest(event ->
+            myController.quitButtonPressed()
+        );
         stage.showAndWait();
     }
 
-    private void stopThreads(){
-        if(this.localThread != null)
-            localThread.interrupt();
-        sharedThread.interrupt();
-    }
-
-    private boolean validateIpAddress(String ipAddress){
-        return PATTERN.matcher(ipAddress).matches();
-    }
 }
