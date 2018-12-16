@@ -44,6 +44,7 @@ public class Monitor implements Viewer, Runnable {
     //---------------------------
     //      GETTERS
     //---------------------------
+
     String getFolderPath() {
         return FOLDER_PATH;
     }
@@ -56,6 +57,10 @@ public class Monitor implements Viewer, Runnable {
         return fileInfo;
     }
 
+    //---------------------------
+    //      SETTERS
+    //---------------------------
+
     public void setFileInfo(FileInfo fileInfo) {
         this.fileInfo = fileInfo;
     }
@@ -63,6 +68,18 @@ public class Monitor implements Viewer, Runnable {
     //---------------------------
     //      IMPLEMENTED METHODS
     //---------------------------
+
+    @Override
+    public void run() {
+
+        watchDirectory();
+        try {
+            Thread.sleep(2000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public ArrayList<FileInfo> getNames() {
         return names;
@@ -75,17 +92,6 @@ public class Monitor implements Viewer, Runnable {
             return true;
         }
         return false;
-    }
-
-    @Override
-    public void run() {
-
-        watchDirectory();
-        try {
-            Thread.sleep(2000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
     }
 
     //---------------------------

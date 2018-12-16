@@ -1,5 +1,6 @@
 package classes;
 
+import interfaces.Viewer;
 import javafx.scene.control.Alert;
 
 import java.io.*;
@@ -10,7 +11,7 @@ import java.util.ArrayList;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 
-public class MyMediaPlayer implements Runnable{
+public class MyMediaPlayer implements Runnable, Viewer {
 
     //--------------------------------
     //      ATTRIBUTES
@@ -42,10 +43,6 @@ public class MyMediaPlayer implements Runnable{
         return MONITOR;
     }
 
-    public ArrayList<FileInfo> getFileInfo() {
-        return fileInfo;
-    }
-
     //--------------------------------
     //      SETTERS
     //--------------------------------
@@ -70,6 +67,20 @@ public class MyMediaPlayer implements Runnable{
 //        } catch (InterruptedException e) {
 //            e.printStackTrace();
 //        }
+    }
+
+    @Override
+    public ArrayList<FileInfo> getNames() {
+        return fileInfo;
+    }
+
+    @Override
+    public boolean checkForChange() {
+        if(isChanged) {
+            isChanged = false;
+            return true;
+        }
+        return false;
     }
 
     //--------------------------------
@@ -158,14 +169,6 @@ public class MyMediaPlayer implements Runnable{
         }
         else
             System.out.println("File already exists in this Folder.");
-    }
-
-    public boolean checkForChange() {
-        if(isChanged) {
-            isChanged = false;
-            return true;
-        }
-        return false;
     }
 
     private void addFile(FileInfo file) {

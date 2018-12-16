@@ -1,6 +1,9 @@
 package controllers;
 
-import classes.*;
+import classes.FileInfo;
+import classes.MediaPlayerTableView;
+import classes.Monitor;
+import classes.MyMediaPlayer;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -10,13 +13,16 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.StackPane;
-import javafx.stage.*;
+import javafx.stage.DirectoryChooser;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
 
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.UnknownHostException;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 public class MyMediaPlayerController {
@@ -141,9 +147,35 @@ public class MyMediaPlayerController {
     private boolean validateIpAddress(String ipAddress){
         return PATTERN.matcher(ipAddress).matches();
     }
+
+    /**
+     * Method used to create a new child stage that plays the folders content
+     * @param myController a controller for the the window
+     */
+    private void createNewStage(MyMediaPlayerPopupController myController){
+        String title = "Media Player";
+
+        StackPane sp = new StackPane();
+        sp.getChildren().add(this.anchorPane);
+
+        Scene scene = new Scene(sp);
+        Stage stage = new Stage();
+
+        stage.initModality(Modality.WINDOW_MODAL);
+        stage.setTitle(title);
+        stage.setScene(scene);
+        stage.setResizable(false);
+        stage.initOwner(this.playButton.getScene().getWindow());
+        stage.setOnCloseRequest(event ->
+                myController.quitButtonPressed()
+        );
+        stage.showAndWait();
+    }
+
     //-----------------------------
     //      ONCLICK METHODS
     //-----------------------------
+
     /**
      * ocClickListener for the connect button
      * Method user to connect the client to the server
@@ -376,30 +408,6 @@ public class MyMediaPlayerController {
                     this.uploadButton.setDisable(false);
             }
         });
-    }
-
-    /**
-     * Method used to create a new child stage that plays the folders content
-     * @param myController a controller for the the window
-     */
-    private void createNewStage(MyMediaPlayerPopupController myController){
-        String title = "Media Player";
-
-        StackPane sp = new StackPane();
-        sp.getChildren().add(this.anchorPane);
-
-        Scene scene = new Scene(sp);
-        Stage stage = new Stage();
-
-        stage.initModality(Modality.WINDOW_MODAL);
-        stage.setTitle(title);
-        stage.setScene(scene);
-        stage.setResizable(false);
-        stage.initOwner(this.playButton.getScene().getWindow());
-        stage.setOnCloseRequest(event ->
-            myController.quitButtonPressed()
-        );
-        stage.showAndWait();
     }
 
 }
