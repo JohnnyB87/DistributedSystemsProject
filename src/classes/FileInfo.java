@@ -13,6 +13,7 @@ public class FileInfo implements Comparable<FileInfo>{
     //---------------------------
     //      CONSTRUCTORS
     //---------------------------
+
     private FileInfo(){}
 
     FileInfo(String location, String name, String type, int size){
@@ -75,6 +76,7 @@ public class FileInfo implements Comparable<FileInfo>{
     //---------------------------
     //      EXTRA FUNCTIONALITY
     //---------------------------
+
     @Override
     public int compareTo(FileInfo file) {
         return this.name.equalsIgnoreCase(file.name) && this.type.equalsIgnoreCase(file.getType())? 0 :
