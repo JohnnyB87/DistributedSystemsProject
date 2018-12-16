@@ -26,11 +26,7 @@ public class MyMediaPlayer implements Runnable, Viewer {
     private ArrayList<FileInfo> names;
     private boolean isChanged;
     private String folderPath;
-    private Socket connectToServerSocket;
     private static int SOCKET_PORT_NO = 1234;
-    private DataOutputStream out;
-    private DataInputStream in;
-    private String ipAddress;
     private RemoteInterface remoteInterface;
 
     //--------------------------------
@@ -139,14 +135,15 @@ public class MyMediaPlayer implements Runnable, Viewer {
     }
 
     /**
-     * Method used to connect the client to the server using an ip address
-     * creates the needed socket and input/output streams
+     * Method used to connect the client to the server using RMI
+     * creates the needed interface using the lookup method
      *
      * @return true if it was able to connect successfully
      */
     public boolean connectToServer(){
         try {
             remoteInterface = (RemoteInterface) Naming.lookup("rmi://localhost:1234/johnsRMI");
+            return true;
         } catch (NotBoundException | MalformedURLException | RemoteException e) {
             new Alert(Alert.AlertType.ERROR, "Connection Failed").show();
             e.printStackTrace();
@@ -164,7 +161,9 @@ public class MyMediaPlayer implements Runnable, Viewer {
         if(file != null && !MONITOR.fileExists(file)) {
             try {
                 System.out.println("Server side sending data");
+                // set the file infos bytes
                 file.setBytes(Files.readAllBytes(Paths.get(file.getAbsolutePath())));
+                // upload to server calling the servers interface
                 remoteInterface.uploadFile(file);
                 System.out.println("Data sent");
             } catch (Exception e) {
@@ -180,7 +179,7 @@ public class MyMediaPlayer implements Runnable, Viewer {
     /**
      * Method that allows the client to download a file from the server via sockets
      *
-     * @param file
+     * @param file FileInfo of file to be downloaded
      */
     public void downLoadFile(FileInfo file){
         System.out.println("Inside downloadFile()");
